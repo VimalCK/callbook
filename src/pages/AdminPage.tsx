@@ -514,10 +514,6 @@ export function AdminPage() {
       {/* ===== SUGGESTIONS TAB ===== */}
       {tab === 'suggestions' && (
         <div className="admin-section">
-          <div className="admin-section-header">
-            <h2>Pending Suggestions</h2>
-            <button className="admin-secondary-btn" onClick={fetchData}>Refresh</button>
-          </div>
           <div className="admin-table">
             {pendingSuggestions.map(s => (
               <div key={s.id} className={`admin-suggestion ${expandedSuggestion === s.id ? 'expanded' : ''}`}>
