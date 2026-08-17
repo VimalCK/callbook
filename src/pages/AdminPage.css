@@ -226,10 +226,9 @@
   display: flex;
   gap: var(--sp-1);
   padding: 3px;
-  margin: 0 var(--sp-4);
+  margin: var(--sp-3) var(--sp-4) var(--sp-4);
   background: var(--color-surface-2);
   border-radius: var(--radius-md);
-  margin-bottom: var(--sp-4);
   flex-shrink: 0;
 }
 
