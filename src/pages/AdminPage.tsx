@@ -485,7 +485,13 @@ export function AdminPage() {
                 {expandedSuggestion === s.id && (
                   <div className="admin-suggestion-details">
                     {editingSuggestion === s.id ? (
-                      <div className="admin-suggestion-edit">
+                      <div className="admin-form-card">
+                        <div className="admin-form-header">
+                          <h3>Edit Suggestion</h3>
+                          <button className="admin-icon-btn" onClick={() => setEditingSuggestion(null)}>
+                            <X size={18} />
+                          </button>
+                        </div>
                         <EditForm
                           form={suggestionForm}
                           onChange={handleSuggestionFormChange}
