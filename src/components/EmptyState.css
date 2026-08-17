@@ -1,4 +1,4 @@
-/* WhatsApp-style empty state */
+/* WhatsApp-style empty state — borderless */
 .empty {
   display: flex;
   flex-direction: column;

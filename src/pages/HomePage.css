@@ -1,9 +1,9 @@
-/* WhatsApp-style home page — content-first, no hero */
+/* WhatsApp-style home page — borderless */
 .home {
   background: var(--color-bg);
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - 104px); /* subtract header height (56px top + 48px tabs) */
+  height: calc(100dvh - 104px);
 }
 
 /* Sticky top area — search + categories */
@@ -28,10 +28,10 @@
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4);
-  background: var(--color-error-subtle);
+  background: rgba(229, 160, 0, 0.08);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
-  color: var(--color-error);
+  color: var(--color-warning);
 }
 
 .error-retry {
@@ -40,11 +40,11 @@
   height: 24px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-sm);
-  color: var(--color-error);
+  border-radius: var(--radius-full);
+  color: var(--color-warning);
   transition: background var(--duration-fast);
 }
-.error-retry:hover { background: var(--color-error-subtle); }
+.error-retry:hover { background: rgba(229, 160, 0, 0.12); }
 
 /* Recent searches */
 .recent-block {
@@ -115,13 +115,13 @@
   color: var(--color-primary);
 }
 
-/* Provider list — no gap, WhatsApp chat-list style */
+/* Provider list */
 .provider-feed {
   display: flex;
   flex-direction: column;
 }
 
-/* FAB — Floating Action Button */
+/* FAB */
 .fab {
   position: fixed;
   bottom: 24px;
@@ -146,7 +146,6 @@
   transform: scale(0.94);
 }
 
-/* Center FAB within app container on desktop */
 @media (min-width: 768px) {
   .fab {
     right: calc(50% - 280px + 24px);
@@ -176,7 +175,7 @@
   width: 50px;
   height: 50px;
   border-radius: var(--radius-full);
-  background: var(--color-surface-3);
+  background: var(--color-surface-2);
   flex-shrink: 0;
 }
 
@@ -190,7 +189,7 @@
 
 .skeleton-line {
   height: 12px;
-  background: var(--color-surface-3);
+  background: var(--color-surface-2);
   border-radius: 4px;
 }
 

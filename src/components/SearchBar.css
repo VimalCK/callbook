@@ -1,4 +1,4 @@
-/* WhatsApp-style search bar */
+/* WhatsApp-style search bar — no borders */
 .search-container {
   padding: var(--sp-2) var(--sp-3);
   background: var(--color-bg);
@@ -27,7 +27,7 @@
   color: var(--color-text-primary);
   font-size: var(--text-md);
   outline: none;
-  transition: background var(--duration-fast);
+  transition: background var(--duration-fast), box-shadow var(--duration-fast);
 }
 
 .search-input::placeholder {
@@ -36,6 +36,7 @@
 
 .search-input:focus {
   background: var(--color-surface-3);
+  box-shadow: 0 0 0 2px var(--color-primary-muted);
 }
 
 .search-input::-webkit-search-cancel-button,
@@ -57,7 +58,7 @@
   color: var(--color-text-primary);
 }
 
-/* Expanded search overlay — WhatsApp style */
+/* Expanded search overlay */
 .search-overlay {
   position: fixed;
   top: 0;
@@ -86,7 +87,6 @@
   height: 56px;
   padding: 0 var(--sp-3);
   background: var(--color-bg);
-  box-shadow: var(--shadow-sm);
 }
 
 .search-back-btn {

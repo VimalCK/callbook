@@ -1,4 +1,4 @@
-/* WhatsApp chat-list style provider card */
+/* WhatsApp chat-list style provider card — borderless */
 .pcard {
   display: flex;
   align-items: center;
@@ -18,7 +18,7 @@
   background: var(--color-surface-3);
 }
 
-/* Divider between cards — WhatsApp style indented line */
+/* Divider between cards — subtle inset shadow */
 .pcard + .pcard::before {
   content: '';
   position: absolute;
@@ -26,16 +26,16 @@
   left: 72px;
   right: 0;
   height: 1px;
-  background: var(--color-divider);
+  background: var(--color-surface-3);
 }
 
-/* Avatar — circular like WhatsApp */
+/* Avatar — circular */
 .pcard-avatar {
   flex-shrink: 0;
   width: 50px;
   height: 50px;
   border-radius: var(--radius-full);
-  background: var(--color-surface-3);
+  background: var(--color-surface-2);
   display: grid;
   place-items: center;
   position: relative;
@@ -66,7 +66,6 @@
   background: var(--color-primary);
   color: var(--color-text-inverse);
   border-radius: var(--radius-full);
-  border: 2px solid var(--color-bg);
 }
 
 /* Content area */
@@ -115,7 +114,7 @@
   flex: 1;
 }
 
-/* Service area badge (replaces tags in chat-list view) */
+/* Service area */
 .pcard-area {
   display: inline-flex;
   align-items: center;
@@ -136,7 +135,7 @@
   border-radius: var(--radius-full);
 }
 
-/* Quick action buttons — shown on hover */
+/* Quick action buttons */
 .pcard-quick-actions {
   display: flex;
   gap: var(--sp-1);

@@ -1,4 +1,4 @@
-/* WhatsApp-style category filter — horizontal scroll chips */
+/* WhatsApp-style category filter — borderless chips */
 .categories-wrap {
   position: relative;
   background: var(--color-bg);
@@ -15,6 +15,8 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   cursor: grab;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .categories-scroll:active {
