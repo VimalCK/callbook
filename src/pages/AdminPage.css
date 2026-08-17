@@ -686,12 +686,13 @@
 }
 
 
-/* Estate filter */
+/* Estate filter — custom dropdown */
 .admin-filter-bar {
+  position: relative;
   margin-bottom: var(--sp-4);
 }
 
-.admin-filter-select {
+.admin-filter-trigger {
   width: 100%;
   height: 40px;
   padding: 0 var(--sp-4);
@@ -701,23 +702,68 @@
   color: var(--color-text-primary);
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
-  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667781' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
-  transition: box-shadow var(--duration-fast);
+  transition: background var(--duration-fast);
 }
 
-.admin-filter-select:focus {
-  box-shadow: 0 0 0 2px var(--color-primary-muted);
+.admin-filter-trigger:hover {
+  background: var(--color-surface-3);
 }
 
-.admin-filter-select option {
+.admin-filter-trigger svg {
+  color: var(--color-text-tertiary);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.admin-filter-trigger svg.rotated {
+  transform: rotate(180deg);
+}
+
+.admin-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
   background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-overlay);
+  padding: var(--sp-1) 0;
+  animation: filterDrop var(--duration-fast) var(--ease-out);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+@keyframes filterDrop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-filter-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--text-md);
   color: var(--color-text-primary);
-  padding: var(--sp-2);
+  text-align: left;
+  transition: background var(--duration-fast);
+}
+
+.admin-filter-option:hover {
+  background: var(--color-surface-3);
+}
+
+.admin-filter-option.active {
+  color: var(--color-primary);
+}
+
+.admin-filter-count {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  font-weight: var(--weight-normal);
 }

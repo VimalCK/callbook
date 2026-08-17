@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home } from 'lucide-react';
 import { Header } from '../components/Header';
 import './AdminPage.css';
@@ -125,6 +125,63 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel }: {
         <button type="submit" className="admin-primary-btn">{submitLabel}</button>
       </div>
     </form>
+  );
+}
+
+/* Custom dropdown for estate filter */
+function EstateFilterDropdown({ estates, providers, value, onChange }: {
+  estates: { id: number; slug: string; name: string }[];
+  providers: ProviderRow[];
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const selectedLabel = value === 'all'
+    ? `All communities (${providers.length})`
+    : `${estates.find(e => String(e.id) === value)?.name || ''} (${providers.filter(p => p.estate_id === Number(value)).length})`;
+
+  return (
+    <div className="admin-filter-bar" ref={ref}>
+      <button className="admin-filter-trigger" onClick={() => setOpen(!open)}>
+        <span>{selectedLabel}</span>
+        <ChevronDown size={16} className={open ? 'rotated' : ''} />
+      </button>
+      {open && (
+        <div className="admin-filter-dropdown">
+          <button
+            className={`admin-filter-option ${value === 'all' ? 'active' : ''}`}
+            onClick={() => { onChange('all'); setOpen(false); }}
+          >
+            All communities
+            <span className="admin-filter-count">{providers.length}</span>
+          </button>
+          {estates.map(est => {
+            const count = providers.filter(p => p.estate_id === est.id).length;
+            return (
+              <button
+                key={est.id}
+                className={`admin-filter-option ${value === String(est.id) ? 'active' : ''}`}
+                onClick={() => { onChange(String(est.id)); setOpen(false); }}
+              >
+                {est.name}
+                <span className="admin-filter-count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -390,20 +447,12 @@ export function AdminPage() {
 
           {/* Estate filter */}
           {estates.length > 1 && (
-            <div className="admin-filter-bar">
-              <select
-                className="admin-filter-select"
-                value={estateFilter}
-                onChange={e => setEstateFilter(e.target.value)}
-              >
-                <option value="all">All communities ({providers.length})</option>
-                {estates.map(est => (
-                  <option key={est.id} value={String(est.id)}>
-                    {est.name} ({providers.filter(p => p.estate_id === est.id).length})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <EstateFilterDropdown
+              estates={estates}
+              providers={providers}
+              value={estateFilter}
+              onChange={setEstateFilter}
+            />
           )}
 
           {showForm && (
