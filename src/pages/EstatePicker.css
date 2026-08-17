@@ -130,3 +130,45 @@
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
 }
+
+
+/* Empty state — no communities */
+.estate-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--sp-8) var(--sp-6);
+}
+
+.estate-empty p {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--sp-2);
+}
+
+.estate-empty span {
+  font-size: var(--text-md);
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+  max-width: 260px;
+  margin-bottom: var(--sp-5);
+}
+
+.estate-suggest-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  border-radius: var(--radius-md);
+  transition: background var(--duration-fast);
+}
+
+.estate-suggest-btn:hover {
+  background: var(--color-primary-hover);
+}

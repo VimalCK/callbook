@@ -75,12 +75,22 @@ export default function App() {
     );
   }
 
-  // No estate selected — show picker
+  // No estate selected — show picker or suggest page
   if (!estate) {
+    if (tab === 'suggest') {
+      return (
+        <div className="app">
+          <Header activeTab="suggest" onTabChange={(t) => { if (t === 'home') setTab('home'); }} showTabs={false} />
+          <main id="main-content">
+            <SuggestPage estate="" />
+          </main>
+        </div>
+      );
+    }
     return (
       <div className="app">
         <main id="main-content">
-          <EstatePicker onSelect={handleSelectEstate} />
+          <EstatePicker onSelect={handleSelectEstate} onSuggest={() => setTab('suggest')} />
         </main>
       </div>
     );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronRight, PlusCircle } from 'lucide-react';
 import './EstatePicker.css';
 
 interface Estate {
@@ -11,9 +11,10 @@ interface Estate {
 
 interface EstatePickerProps {
   onSelect: (slug: string) => void;
+  onSuggest?: () => void;
 }
 
-export function EstatePicker({ onSelect }: EstatePickerProps) {
+export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
   const [estates, setEstates] = useState<Estate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -58,7 +59,7 @@ export function EstatePicker({ onSelect }: EstatePickerProps) {
         </div>
       )}
 
-      {!isLoading && !error && (
+      {!isLoading && !error && estates.length > 0 && (
         <div className="estate-list">
           {estates.map(estate => (
             <button
@@ -78,6 +79,19 @@ export function EstatePicker({ onSelect }: EstatePickerProps) {
               <ChevronRight size={18} className="estate-card-arrow" />
             </button>
           ))}
+        </div>
+      )}
+
+      {!isLoading && !error && estates.length === 0 && (
+        <div className="estate-empty">
+          <p>No communities yet</p>
+          <span>Be the first to suggest a local service contact for your community.</span>
+          {onSuggest && (
+            <button className="estate-suggest-btn" onClick={onSuggest}>
+              <PlusCircle size={18} />
+              Suggest a contact
+            </button>
+          )}
         </div>
       )}
     </div>
