@@ -68,7 +68,6 @@ export default function App() {
   if (tab === 'admin') {
     return (
       <div className="app">
-        <Header showTabs={false} />
         <main id="main-content">
           <AdminPage />
         </main>

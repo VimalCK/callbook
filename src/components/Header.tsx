@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, MoreVertical, WifiOff, RefreshCw } from 'lucide-react';
+import { Search, MoreVertical, WifiOff, RefreshCw, LogOut } from 'lucide-react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import './Header.css';
 
@@ -10,15 +10,15 @@ interface HeaderProps {
   onTabChange?: (tab: Tab) => void;
   onSearchToggle?: () => void;
   onSwitchEstate?: () => void;
+  onLogout?: () => void;
   showTabs?: boolean;
 }
 
-export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwitchEstate, showTabs = true }: HeaderProps) {
+export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwitchEstate, onLogout, showTabs = true }: HeaderProps) {
   const isOnline = useOnlineStatus();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -29,6 +29,8 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwit
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
+
+  const hasMenuItems = onSwitchEstate || onLogout;
 
   return (
     <header className="header">
@@ -46,21 +48,29 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwit
               <Search size={20} />
             </button>
           )}
-          <div className="header-menu-wrap" ref={menuRef}>
-            <button className="header-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="More options" aria-expanded={menuOpen}>
-              <MoreVertical size={20} />
-            </button>
-            {menuOpen && (
-              <div className="header-menu" role="menu">
-                {onSwitchEstate && (
-                  <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onSwitchEstate(); }}>
-                    <RefreshCw size={15} />
-                    <span>Change community</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          {hasMenuItems && (
+            <div className="header-menu-wrap" ref={menuRef}>
+              <button className="header-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label="More options" aria-expanded={menuOpen}>
+                <MoreVertical size={20} />
+              </button>
+              {menuOpen && (
+                <div className="header-menu" role="menu">
+                  {onSwitchEstate && (
+                    <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onSwitchEstate(); }}>
+                      <RefreshCw size={15} />
+                      <span>Change community</span>
+                    </button>
+                  )}
+                  {onLogout && (
+                    <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onLogout(); }}>
+                      <LogOut size={15} />
+                      <span>Logout</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {showTabs && onTabChange && (

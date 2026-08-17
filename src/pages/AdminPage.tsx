@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check, X, LogOut, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home } from 'lucide-react';
+import { Header } from '../components/Header';
 import './AdminPage.css';
 
 interface ProviderRow {
@@ -326,42 +327,38 @@ export function AdminPage() {
   // ===== LOGIN SCREEN =====
   if (!token) {
     return (
-      <div className="admin-login-page">
-        <div className="admin-login-card">
-          <div className="admin-login-icon">
-            <Lock size={24} />
+      <>
+        <Header showTabs={false} />
+        <div className="admin-login-page">
+          <div className="admin-login-card">
+            <div className="admin-login-icon">
+              <Lock size={24} />
+            </div>
+            <h1>Admin Access</h1>
+            <p>Enter the password to manage Callbook providers</p>
+            <form onSubmit={handleLogin}>
+              <input
+                type="password"
+                placeholder="Enter password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoFocus
+              />
+              <button type="submit">Sign in</button>
+            </form>
+            {loginError && <p className="admin-login-error">{loginError}</p>}
           </div>
-          <h1>Admin Access</h1>
-          <p>Enter the password to manage Callbook providers</p>
-          <form onSubmit={handleLogin}>
-            <input
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoFocus
-            />
-            <button type="submit">Sign in</button>
-          </form>
-          {loginError && <p className="admin-login-error">{loginError}</p>}
         </div>
-      </div>
+      </>
     );
   }
 
   // ===== ADMIN DASHBOARD =====
   return (
-    <div className="admin-page">
-      {/* Header */}
-      <div className="admin-topbar">
-        <div className="admin-topbar-left">
-          <h1>Callbook Admin</h1>
-        </div>
-        <button className="admin-logout" onClick={handleLogout}>
-          <LogOut size={14} />
-          <span>Logout</span>
-        </button>
-      </div>
+    <>
+      <Header showTabs={false} onLogout={handleLogout} />
+      <div className="admin-page">
+        {/* Header */}
 
       {/* Flash */}
       {message && <div className="admin-toast">{message}</div>}
@@ -593,5 +590,6 @@ export function AdminPage() {
         </div>
       )}
     </div>
+    </>
   );
 }
