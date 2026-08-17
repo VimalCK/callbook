@@ -81,8 +81,10 @@
 .admin-page {
   max-width: 640px;
   margin: 0 auto;
-  padding: var(--sp-4);
-  padding-bottom: var(--sp-16);
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 56px);
+  overflow: hidden;
 }
 
 /* Topbar */
@@ -90,8 +92,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: var(--sp-3) 0;
-  margin-bottom: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  flex-shrink: 0;
 }
 
 .admin-topbar h1 {
@@ -224,9 +226,11 @@
   display: flex;
   gap: var(--sp-1);
   padding: 3px;
+  margin: 0 var(--sp-4);
   background: var(--color-surface-2);
   border-radius: var(--radius-md);
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-4);
+  flex-shrink: 0;
 }
 
 .admin-tab {
@@ -262,11 +266,20 @@
 }
 
 /* Section */
+.admin-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 var(--sp-4);
+}
+
 .admin-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-3);
+  flex-shrink: 0;
 }
 
 .admin-section-header h2 {
@@ -335,7 +348,10 @@
   background: var(--color-surface-2);
   border-radius: var(--radius-lg);
   padding: var(--sp-5);
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-4);
+  flex-shrink: 0;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .admin-form-header {
@@ -441,7 +457,10 @@
   flex-direction: column;
   background: var(--color-surface-2);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-row {
@@ -689,7 +708,8 @@
 /* Estate filter — custom dropdown */
 .admin-filter-bar {
   position: relative;
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-3);
+  flex-shrink: 0;
 }
 
 .admin-filter-trigger {
