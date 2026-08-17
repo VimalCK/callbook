@@ -252,8 +252,14 @@ app.put('/api/admin/providers/:id', requireAdmin, (req, res) => {
 });
 
 app.delete('/api/admin/providers/:id', requireAdmin, (req, res) => {
-  const result = db.prepare('DELETE FROM providers WHERE id = ?').run(req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
+  const provider = db.prepare('SELECT estate_id FROM providers WHERE id = ?').get(req.params.id);
+  if (!provider) return res.status(404).json({ error: 'Not found' });
+  db.prepare('DELETE FROM providers WHERE id = ?').run(req.params.id);
+  // Auto-delete estate if no providers remain in it
+  const remaining = db.prepare('SELECT COUNT(*) as n FROM providers WHERE estate_id = ?').get(provider.estate_id);
+  if (remaining.n === 0) {
+    db.prepare('DELETE FROM estates WHERE id = ?').run(provider.estate_id);
+  }
   res.json({ success: true });
 });
 
