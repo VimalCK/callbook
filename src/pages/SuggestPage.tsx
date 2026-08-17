@@ -25,6 +25,46 @@ interface SuggestPageProps {
   estate: string;
 }
 
+/* Custom category dropdown */
+function CategoryDropdown({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const selectedName = CATEGORIES.find(c => c.id === value)?.name || 'Select';
+
+  return (
+    <div className="combobox-wrap" ref={ref}>
+      <button type="button" className="combobox-trigger" onClick={() => setOpen(!open)}>
+        <span>{selectedName}</span>
+        <ChevronDown size={16} className={`combobox-arrow-btn ${open ? 'rotated' : ''}`} />
+      </button>
+      {open && (
+        <div className="combobox-dropdown">
+          {CATEGORIES.map(c => (
+            <button
+              key={c.id}
+              type="button"
+              className={`combobox-option ${c.id === value ? 'active' : ''}`}
+              onClick={() => { onChange(c.id); setOpen(false); }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SuggestPage({ estate }: SuggestPageProps) {
   const [form, setForm] = useState({ name: '', phone: '', category: 'plumber', service_area: '', note: '' });
   const [submitted, setSubmitted] = useState(false);
@@ -193,10 +233,11 @@ export function SuggestPage({ estate }: SuggestPageProps) {
         </div>
 
         <div className="suggest-field">
-          <label htmlFor="s-category">Service category <span className="req">*</span></label>
-          <select id="s-category" name="category" value={form.category} onChange={handleChange}>
-            {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <label>Service category <span className="req">*</span></label>
+          <CategoryDropdown
+            value={form.category}
+            onChange={(val) => setForm(prev => ({ ...prev, category: val }))}
+          />
         </div>
 
         <div className="suggest-field">

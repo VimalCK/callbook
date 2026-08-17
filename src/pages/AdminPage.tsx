@@ -67,6 +67,24 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel }: {
   onCancel: () => void;
   submitLabel: string;
 }) {
+  const [catOpen, setCatOpen] = useState(false);
+  const catRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!catOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [catOpen]);
+
+  const handleCategorySelect = (id: string) => {
+    const syntheticEvent = { target: { name: 'category', value: id, type: 'select-one' } } as React.ChangeEvent<HTMLSelectElement>;
+    onChange(syntheticEvent);
+    setCatOpen(false);
+  };
+
   return (
     <form onSubmit={onSubmit}>
       <div className="admin-form-grid">
@@ -80,9 +98,26 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel }: {
         </div>
         <div className="admin-field">
           <label>Category <span className="req">*</span></label>
-          <select name="category" value={form.category} onChange={onChange}>
-            {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <div className="admin-custom-select" ref={catRef}>
+            <button type="button" className="admin-select-trigger" onClick={() => setCatOpen(!catOpen)}>
+              <span>{CATEGORIES.find(c => c.id === form.category)?.name || 'Select'}</span>
+              <ChevronDown size={14} className={catOpen ? 'rotated' : ''} />
+            </button>
+            {catOpen && (
+              <div className="admin-select-dropdown">
+                {CATEGORIES.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`admin-select-option ${c.id === form.category ? 'active' : ''}`}
+                    onClick={() => handleCategorySelect(c.id)}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div className="admin-field">
           <label>Phone <span className="req">*</span></label>
