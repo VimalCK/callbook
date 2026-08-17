@@ -64,11 +64,6 @@ export default function App() {
     setSelectedProvider(null);
   }, []);
 
-  const handleSuggest = useCallback(() => {
-    setTab('suggest');
-    setSelectedProvider(null);
-  }, []);
-
   // Admin page — full screen, no estate filter needed
   if (tab === 'admin') {
     return (
@@ -116,7 +111,6 @@ export default function App() {
             error={error}
             onRefetch={refetch}
             onViewProvider={handleViewProvider}
-            onSuggest={handleSuggest}
           />
         )}
         {tab === 'suggest' && <SuggestPage estate={estate} />}

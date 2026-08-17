@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { PlusCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { CategoryGrid } from '../components/CategoryGrid';
 import { ProviderCard } from '../components/ProviderCard';
@@ -16,10 +16,9 @@ interface HomePageProps {
   error: string | null;
   onRefetch: () => void;
   onViewProvider: (provider: Provider) => void;
-  onSuggest: () => void;
 }
 
-export function HomePage({ providers, categories, isLoading, error, onRefetch, onViewProvider, onSuggest }: HomePageProps) {
+export function HomePage({ providers, categories, isLoading, error, onRefetch, onViewProvider }: HomePageProps) {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -145,11 +144,6 @@ export function HomePage({ providers, categories, isLoading, error, onRefetch, o
           </section>
         ) : null}
       </div>
-
-      {/* FAB — suggest a contact */}
-      <button className="fab" onClick={onSuggest} aria-label="Suggest a provider">
-        <PlusCircle size={26} />
-      </button>
     </div>
   );
 }

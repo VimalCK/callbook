@@ -52,7 +52,79 @@ const EMPTY_FORM = {
   working_hours: '',
   is_verified: false,
   services: '',
+  estate_name: '',
 };
+
+type FormData = typeof EMPTY_FORM;
+
+/* Shared edit form used by both providers and suggestions */
+function EditForm({ form, onChange, onSubmit, onCancel, submitLabel }: {
+  form: FormData;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onCancel: () => void;
+  submitLabel: string;
+}) {
+  return (
+    <form onSubmit={onSubmit}>
+      <div className="admin-form-grid">
+        <div className="admin-field">
+          <label>Person name <span className="req">*</span></label>
+          <input name="name" value={form.name} onChange={onChange} required placeholder="e.g. Rajesh Kumar" />
+        </div>
+        <div className="admin-field">
+          <label>Business name</label>
+          <input name="business_name" value={form.business_name} onChange={onChange} placeholder="e.g. Kumar Plumbing" />
+        </div>
+        <div className="admin-field">
+          <label>Category <span className="req">*</span></label>
+          <select name="category" value={form.category} onChange={onChange}>
+            {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div className="admin-field">
+          <label>Phone <span className="req">*</span></label>
+          <input name="phone" value={form.phone} onChange={onChange} required placeholder="+919876543210" />
+        </div>
+        <div className="admin-field">
+          <label>WhatsApp number</label>
+          <input name="whatsapp" value={form.whatsapp} onChange={onChange} placeholder="919876543210 (no + sign)" />
+        </div>
+        <div className="admin-field">
+          <label>Service area</label>
+          <input name="service_area" value={form.service_area} onChange={onChange} placeholder="e.g. All Sectors" />
+        </div>
+        <div className="admin-field">
+          <label>Working hours</label>
+          <input name="working_hours" value={form.working_hours} onChange={onChange} placeholder="e.g. Mon–Sat, 9 AM – 6 PM" />
+        </div>
+        <div className="admin-field">
+          <label>Community</label>
+          <input name="estate_name" value={form.estate_name} onChange={onChange} placeholder="e.g. Ballymakenny Park" />
+        </div>
+        <div className="admin-field full-width">
+          <label>Description</label>
+          <textarea name="description" value={form.description} onChange={onChange} rows={2} placeholder="Brief description of services..." />
+        </div>
+        <div className="admin-field full-width">
+          <label>Services (comma separated)</label>
+          <input name="services" value={form.services} onChange={onChange} placeholder="Pipe repair, Leak fixing, Bathroom fitting" />
+        </div>
+        <div className="admin-field">
+          <label className="admin-checkbox">
+            <input type="checkbox" name="is_verified" checked={form.is_verified} onChange={onChange} />
+            <BadgeCheck size={14} />
+            <span>Verified provider</span>
+          </label>
+        </div>
+      </div>
+      <div className="admin-form-footer">
+        <button type="button" className="admin-secondary-btn" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="admin-primary-btn">{submitLabel}</button>
+      </div>
+    </form>
+  );
+}
 
 export function AdminPage() {
   const [providers, setProviders] = useState<ProviderRow[]>([]);
@@ -64,7 +136,7 @@ export function AdminPage() {
   const [tab, setTab] = useState<'providers' | 'suggestions'>('providers');
   const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(null);
   const [editingSuggestion, setEditingSuggestion] = useState<number | null>(null);
-  const [suggestionForm, setSuggestionForm] = useState({ name: '', phone: '', category: '', service_area: '', note: '', estate_name: '' });
+  const [suggestionForm, setSuggestionForm] = useState(EMPTY_FORM);
 
   const switchTab = (t: 'providers' | 'suggestions') => {
     setTab(t);
@@ -128,6 +200,14 @@ export function AdminPage() {
     }));
   };
 
+  const handleSuggestionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setSuggestionForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -145,7 +225,7 @@ export function AdminPage() {
     const res = await fetch(url, { method, headers: authHeaders, body: JSON.stringify(payload) });
 
     if (res.ok) {
-      flash(editingId ? 'Provider updated successfully' : 'Provider added successfully');
+      flash(editingId ? 'Provider updated' : 'Provider added');
       setShowForm(false);
       setEditingId(null);
       setForm(EMPTY_FORM);
@@ -168,6 +248,7 @@ export function AdminPage() {
       working_hours: p.working_hours || '',
       is_verified: p.is_verified,
       services: (p.services || []).join(', '),
+      estate_name: '',
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -181,36 +262,46 @@ export function AdminPage() {
 
   const handleApprove = async (id: number) => {
     const res = await fetch(`/api/admin/suggestions/${id}/approve`, { method: 'POST', headers: authHeaders });
-    if (res.ok) { flash('Suggestion approved and added as provider'); fetchData(); }
+    if (res.ok) { flash('Approved and added as provider'); fetchData(); setExpandedSuggestion(null); }
   };
 
   const handleDismiss = async (id: number) => {
     if (!confirm('Dismiss this suggestion?')) return;
     const res = await fetch(`/api/admin/suggestions/${id}`, { method: 'DELETE', headers: authHeaders });
-    if (res.ok) { flash('Suggestion dismissed'); fetchData(); }
+    if (res.ok) { flash('Suggestion dismissed'); fetchData(); setExpandedSuggestion(null); }
   };
 
   const handleEditSuggestion = (s: SuggestionRow) => {
     setEditingSuggestion(s.id);
     setSuggestionForm({
       name: s.name,
-      phone: s.phone,
+      business_name: '',
       category: s.category,
+      description: s.note || '',
+      phone: s.phone,
+      whatsapp: '',
       service_area: s.service_area || '',
-      note: s.note || '',
+      working_hours: '',
+      is_verified: false,
+      services: '',
       estate_name: s.estate_name || '',
     });
   };
 
-  const handleSuggestionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setSuggestionForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSaveSuggestion = async (id: number) => {
-    const res = await fetch(`/api/admin/suggestions/${id}`, {
+  const handleSaveSuggestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSuggestion) return;
+    const res = await fetch(`/api/admin/suggestions/${editingSuggestion}`, {
       method: 'PUT',
       headers: authHeaders,
-      body: JSON.stringify(suggestionForm),
+      body: JSON.stringify({
+        name: suggestionForm.name,
+        phone: suggestionForm.phone,
+        category: suggestionForm.category,
+        service_area: suggestionForm.service_area || null,
+        note: suggestionForm.description || null,
+        estate_name: suggestionForm.estate_name || null,
+      }),
     });
     if (res.ok) {
       flash('Suggestion updated');
@@ -304,11 +395,10 @@ export function AdminPage() {
             <h2>All Providers</h2>
             <button className="admin-primary-btn" onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); }}>
               <Plus size={15} />
-              Add provider
+              Add
             </button>
           </div>
 
-          {/* Form */}
           {showForm && (
             <div className="admin-form-card">
               <div className="admin-form-header">
@@ -317,63 +407,16 @@ export function AdminPage() {
                   <X size={18} />
                 </button>
               </div>
-              <form onSubmit={handleSubmit}>
-                <div className="admin-form-grid">
-                  <div className="admin-field">
-                    <label>Person name <span className="req">*</span></label>
-                    <input name="name" value={form.name} onChange={handleChange} required placeholder="e.g. Rajesh Kumar" />
-                  </div>
-                  <div className="admin-field">
-                    <label>Business name</label>
-                    <input name="business_name" value={form.business_name} onChange={handleChange} placeholder="e.g. Kumar Plumbing" />
-                  </div>
-                  <div className="admin-field">
-                    <label>Category <span className="req">*</span></label>
-                    <select name="category" value={form.category} onChange={handleChange}>
-                      {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="admin-field">
-                    <label>Phone <span className="req">*</span></label>
-                    <input name="phone" value={form.phone} onChange={handleChange} required placeholder="+919876543210" />
-                  </div>
-                  <div className="admin-field">
-                    <label>WhatsApp number</label>
-                    <input name="whatsapp" value={form.whatsapp} onChange={handleChange} placeholder="919876543210 (no + sign)" />
-                  </div>
-                  <div className="admin-field">
-                    <label>Service area</label>
-                    <input name="service_area" value={form.service_area} onChange={handleChange} placeholder="e.g. All Sectors" />
-                  </div>
-                  <div className="admin-field">
-                    <label>Working hours</label>
-                    <input name="working_hours" value={form.working_hours} onChange={handleChange} placeholder="e.g. Mon–Sat, 9 AM – 6 PM" />
-                  </div>
-                  <div className="admin-field full-width">
-                    <label>Description</label>
-                    <textarea name="description" value={form.description} onChange={handleChange} rows={2} placeholder="Brief description of services..." />
-                  </div>
-                  <div className="admin-field full-width">
-                    <label>Services (comma separated)</label>
-                    <input name="services" value={form.services} onChange={handleChange} placeholder="Pipe repair, Leak fixing, Bathroom fitting" />
-                  </div>
-                  <div className="admin-field">
-                    <label className="admin-checkbox">
-                      <input type="checkbox" name="is_verified" checked={form.is_verified} onChange={handleChange} />
-                      <BadgeCheck size={14} />
-                      <span>Verified provider</span>
-                    </label>
-                  </div>
-                </div>
-                <div className="admin-form-footer">
-                  <button type="button" className="admin-secondary-btn" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancel</button>
-                  <button type="submit" className="admin-primary-btn">{editingId ? 'Save changes' : 'Add provider'}</button>
-                </div>
-              </form>
+              <EditForm
+                form={form}
+                onChange={handleChange}
+                onSubmit={handleSubmit}
+                onCancel={() => { setShowForm(false); setEditingId(null); }}
+                submitLabel={editingId ? 'Save changes' : 'Add provider'}
+              />
             </div>
           )}
 
-          {/* Provider list */}
           <div className="admin-table">
             {providers.map(p => (
               <div key={p.id} className="admin-row">
@@ -405,7 +448,7 @@ export function AdminPage() {
               <div className="admin-empty">
                 <Users size={24} />
                 <p>No providers yet</p>
-                <span>Click "Add provider" to get started</span>
+                <span>Click "Add" to get started</span>
               </div>
             )}
           </div>
@@ -422,10 +465,10 @@ export function AdminPage() {
           <div className="admin-table">
             {pendingSuggestions.map(s => (
               <div key={s.id} className={`admin-suggestion ${expandedSuggestion === s.id ? 'expanded' : ''}`}>
-                {/* Summary row — click to expand */}
+                {/* Summary row */}
                 <button
                   className="admin-suggestion-header"
-                  onClick={() => setExpandedSuggestion(expandedSuggestion === s.id ? null : s.id)}
+                  onClick={() => { setExpandedSuggestion(expandedSuggestion === s.id ? null : s.id); setEditingSuggestion(null); }}
                 >
                   <div className="admin-row-avatar suggestion">{s.name.charAt(0)}</div>
                   <div className="admin-row-content">
@@ -438,52 +481,20 @@ export function AdminPage() {
                   <ChevronDown size={16} className={`admin-suggestion-chevron ${expandedSuggestion === s.id ? 'rotated' : ''}`} />
                 </button>
 
-                {/* Expanded details */}
+                {/* Expanded */}
                 {expandedSuggestion === s.id && (
                   <div className="admin-suggestion-details">
                     {editingSuggestion === s.id ? (
-                      /* Edit mode */
                       <div className="admin-suggestion-edit">
-                        <div className="admin-form-grid">
-                          <div className="admin-field">
-                            <label>Name</label>
-                            <input name="name" value={suggestionForm.name} onChange={handleSuggestionFormChange} />
-                          </div>
-                          <div className="admin-field">
-                            <label>Phone</label>
-                            <input name="phone" value={suggestionForm.phone} onChange={handleSuggestionFormChange} />
-                          </div>
-                          <div className="admin-field">
-                            <label>Category</label>
-                            <select name="category" value={suggestionForm.category} onChange={handleSuggestionFormChange}>
-                              {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                          </div>
-                          <div className="admin-field">
-                            <label>Service area</label>
-                            <input name="service_area" value={suggestionForm.service_area} onChange={handleSuggestionFormChange} />
-                          </div>
-                          <div className="admin-field">
-                            <label>Community</label>
-                            <input name="estate_name" value={suggestionForm.estate_name} onChange={handleSuggestionFormChange} />
-                          </div>
-                          <div className="admin-field full-width">
-                            <label>Notes</label>
-                            <textarea name="note" value={suggestionForm.note} onChange={handleSuggestionFormChange} rows={2} />
-                          </div>
-                        </div>
-                        <div className="admin-suggestion-actions">
-                          <button className="admin-primary-btn" onClick={() => handleSaveSuggestion(s.id)}>
-                            <Check size={15} />
-                            Save
-                          </button>
-                          <button className="admin-secondary-btn" onClick={() => setEditingSuggestion(null)}>
-                            Cancel
-                          </button>
-                        </div>
+                        <EditForm
+                          form={suggestionForm}
+                          onChange={handleSuggestionFormChange}
+                          onSubmit={handleSaveSuggestion}
+                          onCancel={() => setEditingSuggestion(null)}
+                          submitLabel="Save"
+                        />
                       </div>
                     ) : (
-                      /* Read-only mode */
                       <>
                         <div className="admin-detail-grid">
                           <div className="admin-detail-item">
