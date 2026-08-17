@@ -366,29 +366,12 @@ export function AdminPage() {
       {/* Flash */}
       {message && <div className="admin-toast">{message}</div>}
 
-      {/* Stats */}
-      <div className="admin-stats">
-        <div className="admin-stat-card">
-          <Users size={18} />
-          <div>
-            <span className="stat-value">{providers.length}</span>
-            <span className="stat-label">Providers</span>
-          </div>
-        </div>
-        <div className="admin-stat-card">
-          <Inbox size={18} />
-          <div>
-            <span className="stat-value">{pendingSuggestions.length}</span>
-            <span className="stat-label">Pending</span>
-          </div>
-        </div>
-      </div>
-
       {/* Tabs */}
       <div className="admin-tab-bar">
         <button className={`admin-tab ${tab === 'providers' ? 'active' : ''}`} onClick={() => switchTab('providers')}>
           <Users size={15} />
           Providers
+          <span className="admin-tab-badge">{providers.length}</span>
         </button>
         <button className={`admin-tab ${tab === 'suggestions' ? 'active' : ''}`} onClick={() => switchTab('suggestions')}>
           <Inbox size={15} />
