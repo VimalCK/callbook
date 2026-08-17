@@ -1,0 +1,113 @@
+/* WhatsApp-style search bar */
+.search-container {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--color-bg);
+}
+
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 36px 0 40px;
+  background: var(--color-surface-2);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-md);
+  outline: none;
+  transition: background var(--duration-fast);
+}
+
+.search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.search-input:focus {
+  background: var(--color-surface-3);
+}
+
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration { display: none; }
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-tertiary);
+  transition: color var(--duration-fast);
+}
+
+.search-clear:hover {
+  color: var(--color-text-primary);
+}
+
+/* Expanded search overlay — WhatsApp style */
+.search-overlay {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  z-index: var(--z-overlay);
+  background: var(--color-bg);
+  animation: slideDown var(--duration-base) var(--ease-out);
+}
+
+@media (min-width: 768px) {
+  .search-overlay { max-width: 560px; }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.search-overlay-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: 56px;
+  padding: 0 var(--sp-3);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-back-btn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-tertiary);
+}
+
+.search-overlay-input {
+  flex: 1;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-lg);
+  outline: none;
+}
+
+.search-overlay-input::placeholder {
+  color: var(--color-text-tertiary);
+}

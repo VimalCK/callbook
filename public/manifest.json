@@ -1,0 +1,18 @@
+{
+  "name": "Callbook — Local Service Directory",
+  "short_name": "Callbook",
+  "description": "Find and contact trusted local service providers in your residential community",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111b21",
+  "theme_color": "#1f2c34",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

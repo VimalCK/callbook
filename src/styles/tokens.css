@@ -1,0 +1,109 @@
+/* ===== DESIGN TOKENS — Callbook (WhatsApp Dark Theme) ===== */
+:root {
+  /* WhatsApp Dark Brand Colors */
+  --color-primary: #00a884;
+  --color-primary-dark: #00a884;
+  --color-primary-darker: #009177;
+  --color-primary-hover: #009177;
+  --color-primary-subtle: rgba(0, 168, 132, 0.12);
+  --color-primary-muted: rgba(0, 168, 132, 0.2);
+  --color-primary-border: rgba(0, 168, 132, 0.3);
+
+  /* Header — WhatsApp dark header */
+  --color-header: #1f2c34;
+  --color-header-text: #e9edef;
+  --color-header-icon: rgba(233, 237, 239, 0.75);
+
+  /* Surfaces — WhatsApp dark theme */
+  --color-bg: #111b21;
+  --color-surface-1: #111b21;
+  --color-surface-2: #1f2c34;
+  --color-surface-3: #233138;
+  --color-chat-bg: #0b141a;
+
+  /* Borders */
+  --color-border: #233138;
+  --color-border-hover: #2a3942;
+  --color-border-active: var(--color-primary);
+  --color-divider: #233138;
+
+  /* Text */
+  --color-text-primary: #e9edef;
+  --color-text-secondary: #8696a0;
+  --color-text-tertiary: #667781;
+  --color-text-inverse: #111b21;
+  --color-text-on-primary: #111b21;
+
+  /* Semantic */
+  --color-success: #00a884;
+  --color-success-subtle: rgba(0, 168, 132, 0.12);
+  --color-error: #f15c6d;
+  --color-error-subtle: rgba(241, 92, 109, 0.1);
+  --color-warning: #e9a800;
+  --color-unread: #00a884;
+
+  /* WhatsApp green */
+  --color-whatsapp: #25d366;
+  --color-whatsapp-hover: #22c55e;
+  --color-whatsapp-subtle: rgba(37, 211, 102, 0.12);
+
+  /* FAB */
+  --color-fab: #00a884;
+  --color-fab-hover: #009177;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.75rem;
+  --text-base: 0.8125rem;
+  --text-md: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.125rem;
+  --text-2xl: 1.25rem;
+  --text-3xl: 1.5rem;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Spacing */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows — subtle on dark */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-header: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-fab: 0 4px 12px rgba(0, 0, 0, 0.5);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+
+  /* Z-layers */
+  --z-base: 1;
+  --z-sticky: 10;
+  --z-nav: 50;
+  --z-fab: 60;
+  --z-overlay: 100;
+  --z-toast: 200;
+}

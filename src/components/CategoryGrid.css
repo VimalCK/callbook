@@ -1,0 +1,62 @@
+/* WhatsApp-style category filter — horizontal scroll chips */
+.categories-wrap {
+  position: relative;
+  background: var(--color-bg);
+}
+
+.categories-scroll {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+}
+
+.categories-scroll:active {
+  cursor: grabbing;
+}
+
+.categories-scroll::-webkit-scrollbar { display: none; }
+
+.cat-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 14px;
+  background: var(--color-surface-2);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  transition: all var(--duration-fast) var(--ease-out);
+  user-select: none;
+}
+
+.cat-chip:hover {
+  background: var(--color-surface-3);
+  color: var(--color-text-primary);
+}
+
+.cat-chip.active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.cat-chip-icon {
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+}
+
+.cat-chip.active .cat-chip-icon {
+  opacity: 1;
+}

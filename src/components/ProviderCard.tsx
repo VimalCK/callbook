@@ -1,0 +1,67 @@
+import { Phone, MessageCircle, BadgeCheck, MapPin } from 'lucide-react';
+import type { Provider } from '../types/provider';
+import { getCallUrl, getWhatsAppUrl } from '../utils/share';
+import './ProviderCard.css';
+
+interface ProviderCardProps {
+  provider: Provider;
+  onViewDetails: (provider: Provider) => void;
+}
+
+export function ProviderCard({ provider, onViewDetails }: ProviderCardProps) {
+  const displayName = provider.businessName || provider.name;
+  const categoryLabel = provider.category.replace('-', ' ');
+
+  return (
+    <article className="pcard" onClick={() => onViewDetails(provider)} role="button" tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onViewDetails(provider); }}
+    >
+      {/* Circular avatar */}
+      <div className="pcard-avatar">
+        {provider.image ? (
+          <img src={provider.image} alt="" loading="lazy" />
+        ) : (
+          <span className="pcard-initial">{displayName.charAt(0)}</span>
+        )}
+        {provider.isVerified && (
+          <span className="pcard-verified" aria-label="Verified"><BadgeCheck size={11} /></span>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="pcard-content">
+        <div className="pcard-top-row">
+          <h3 className="pcard-name">{displayName}</h3>
+          <span className="pcard-category">{categoryLabel}</span>
+        </div>
+        <div className="pcard-bottom-row">
+          <p className="pcard-desc">{provider.services.slice(0, 3).join(' · ')}</p>
+        </div>
+        {provider.serviceArea && (
+          <span className="pcard-area">
+            <MapPin size={10} />
+            {provider.serviceArea}
+          </span>
+        )}
+      </div>
+
+      {/* Quick action buttons */}
+      <div className="pcard-quick-actions" onClick={e => e.stopPropagation()}>
+        <a href={getCallUrl(provider.phone)} className="pcard-quick-btn" aria-label={`Call ${provider.name}`}>
+          <Phone size={18} />
+        </a>
+        {provider.whatsapp && (
+          <a
+            href={getWhatsAppUrl(provider.whatsapp)}
+            className="pcard-quick-btn pcard-quick-btn-wa"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`WhatsApp ${provider.name}`}
+          >
+            <MessageCircle size={18} />
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}

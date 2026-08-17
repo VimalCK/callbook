@@ -1,0 +1,28 @@
+export interface Provider {
+  id: string;
+  name: string;
+  businessName?: string;
+  category: string;
+  description: string;
+  phone: string;
+  whatsapp?: string;
+  serviceArea?: string;
+  address?: string;
+  workingHours?: string;
+  image?: string;
+  isVerified?: boolean;
+  lastUpdated?: string;
+  services: string[];
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description: string;
+  providerCount: number;
+}
+
+export type SearchSuggestion = {
+  term: string;
+  category: string;
+};
