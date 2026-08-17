@@ -4,6 +4,7 @@ import './AdminPage.css';
 
 interface ProviderRow {
   id: number;
+  estate_id: number;
   name: string;
   business_name: string | null;
   category: string;
@@ -129,6 +130,8 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel }: {
 export function AdminPage() {
   const [providers, setProviders] = useState<ProviderRow[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionRow[]>([]);
+  const [estates, setEstates] = useState<{ id: number; slug: string; name: string }[]>([]);
+  const [estateFilter, setEstateFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -176,12 +179,14 @@ export function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [pRes, sRes] = await Promise.all([
+      const [pRes, sRes, eRes] = await Promise.all([
         fetch('/api/providers'),
         fetch('/api/suggestions', { headers: { 'x-admin-token': token || '' } }),
+        fetch('/api/estates'),
       ]);
       if (pRes.ok) setProviders(await pRes.json());
       if (sRes.ok) setSuggestions(await sRes.json());
+      if (eRes.ok) setEstates(await eRes.json());
     } catch { /* server not running */ }
   };
 
@@ -314,6 +319,10 @@ export function AdminPage() {
 
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
 
+  const filteredProviders = estateFilter === 'all'
+    ? providers
+    : providers.filter(p => p.estate_id === Number(estateFilter));
+
   // ===== LOGIN SCREEN =====
   if (!token) {
     return (
@@ -399,6 +408,24 @@ export function AdminPage() {
             </button>
           </div>
 
+          {/* Estate filter */}
+          {estates.length > 1 && (
+            <div className="admin-filter-bar">
+              <select
+                className="admin-filter-select"
+                value={estateFilter}
+                onChange={e => setEstateFilter(e.target.value)}
+              >
+                <option value="all">All communities ({providers.length})</option>
+                {estates.map(est => (
+                  <option key={est.id} value={String(est.id)}>
+                    {est.name} ({providers.filter(p => p.estate_id === est.id).length})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {showForm && (
             <div className="admin-form-card">
               <div className="admin-form-header">
@@ -418,7 +445,7 @@ export function AdminPage() {
           )}
 
           <div className="admin-table">
-            {providers.map(p => (
+            {filteredProviders.map(p => (
               <div key={p.id} className="admin-row">
                 <div className="admin-row-avatar">
                   {(p.business_name || p.name).charAt(0)}
@@ -444,7 +471,7 @@ export function AdminPage() {
                 </div>
               </div>
             ))}
-            {providers.length === 0 && (
+            {filteredProviders.length === 0 && (
               <div className="admin-empty">
                 <Users size={24} />
                 <p>No providers yet</p>
