@@ -16,6 +16,8 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home');
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [estate, setEstate] = useState<string | null>(getSelectedEstate());
+  const [estateCount, setEstateCount] = useState<number | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
   const { providers, categories, isLoading, error, refetch } = useProviders(estate);
 
   useEffect(() => {
@@ -25,7 +27,6 @@ export default function App() {
     // Check if URL has an estate slug (e.g., /ballymakenny-park)
     const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
     if (path && path !== 'admin' && !path.startsWith('api')) {
-      // Validate it's a real estate by fetching
       fetch(`/api/estates/${path}`)
         .then(r => r.ok ? r.json() : null)
         .then(data => {
@@ -36,11 +37,29 @@ export default function App() {
         })
         .catch(() => {});
     }
+    // If no estate selected, check how many exist
+    if (!getSelectedEstate()) {
+      fetch('/api/estates')
+        .then(r => r.ok ? r.json() : [])
+        .then(data => {
+          setEstateCount(data.length);
+          if (data.length === 1) {
+            // Auto-select the only estate
+            setSelectedEstate(data[0].slug);
+            setEstate(data[0].slug);
+          } else if (data.length > 1) {
+            setShowPicker(true);
+          }
+          // If 0 estates, just show the main app with empty state
+        })
+        .catch(() => { setEstateCount(0); });
+    }
   }, []);
 
   const handleSelectEstate = useCallback((slug: string) => {
     setSelectedEstate(slug);
     setEstate(slug);
+    setShowPicker(false);
   }, []);
 
   const handleSwitchEstate = useCallback(() => {
@@ -48,6 +67,7 @@ export default function App() {
     setEstate(null);
     setSelectedProvider(null);
     setTab('home');
+    setShowPicker(true);
   }, []);
 
   const handleViewProvider = useCallback((provider: Provider) => {
@@ -75,8 +95,8 @@ export default function App() {
     );
   }
 
-  // No estate selected — show picker
-  if (!estate) {
+  // Show estate picker only when multiple estates exist and none selected
+  if (showPicker && !estate) {
     return (
       <div className="app">
         <main id="main-content">
