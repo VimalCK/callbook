@@ -161,9 +161,13 @@ app.get('/api/providers', (req, res) => {
   if (estateSlug) {
     const estateId = getEstateId(estateSlug);
     if (!estateId) return res.json([]);
-    rows = db.prepare('SELECT * FROM providers WHERE estate_id = ? ORDER BY COALESCE(business_name, name) ASC').all(estateId);
+    rows = db.prepare(`SELECT * FROM providers WHERE estate_id = ? ORDER BY
+      CASE WHEN COALESCE(business_name, name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
+      LOWER(COALESCE(business_name, name)) ASC`).all(estateId);
   } else {
-    rows = db.prepare('SELECT * FROM providers ORDER BY COALESCE(business_name, name) ASC').all();
+    rows = db.prepare(`SELECT * FROM providers ORDER BY
+      CASE WHEN COALESCE(business_name, name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
+      LOWER(COALESCE(business_name, name)) ASC`).all();
   }
   res.json(rows.map(row => ({ ...row, is_verified: Boolean(row.is_verified), services: JSON.parse(row.services) })));
 });
