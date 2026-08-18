@@ -284,7 +284,10 @@ export function AdminPage() {
       if (pRes.ok) setProviders(await pRes.json());
       if (sRes.ok) setSuggestions(await sRes.json());
       if (eRes.ok) setEstates(await eRes.json());
-      if (cRes.ok) setCategories(await cRes.json());
+      if (cRes.ok) {
+        const cats = await cRes.json();
+        setCategories(cats.sort((a: CategoryRow, b: CategoryRow) => a.name.localeCompare(b.name)));
+      }
     } catch { /* server not running */ }
   };
 

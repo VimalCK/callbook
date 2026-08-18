@@ -74,9 +74,10 @@ export function SuggestPage({ estate }: SuggestPageProps) {
     fetch('/api/categories')
       .then(r => r.ok ? r.json() : [])
       .then((data: CategoryItem[]) => {
-        setCategories(data);
-        if (data.length > 0 && !form.category) {
-          setForm(prev => ({ ...prev, category: data[0].id }));
+        const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+        setCategories(sorted);
+        if (sorted.length > 0 && !form.category) {
+          setForm(prev => ({ ...prev, category: sorted[0].id }));
         }
       })
       .catch(() => {});
