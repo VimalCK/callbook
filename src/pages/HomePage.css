@@ -119,6 +119,9 @@
 .provider-feed {
   display: flex;
   flex-direction: column;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 /* FAB */
