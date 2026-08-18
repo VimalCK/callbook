@@ -38,10 +38,10 @@ export function ProviderCard({ provider, categoryName, onViewDetails }: Provider
         <div className="pcard-bottom-row">
           <p className="pcard-desc">{provider.services.slice(0, 3).join(' · ')}</p>
         </div>
-        {provider.serviceArea && (
+        {provider.phone && (
           <span className="pcard-area">
-            <MapPin size={10} />
-            {provider.serviceArea}
+            <Phone size={10} />
+            {provider.phone}
           </span>
         )}
       </div>

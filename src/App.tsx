@@ -16,7 +16,20 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home');
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [estate, setEstate] = useState<string | null>(getSelectedEstate());
+  const [estateName, setEstateName] = useState<string>('');
   const { providers, categories, isLoading, error, refetch } = useProviders(estate);
+
+  // Fetch estate display name
+  useEffect(() => {
+    if (estate) {
+      fetch(`/api/estates/${estate}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setEstateName(data.name); })
+        .catch(() => {});
+    } else {
+      setEstateName('');
+    }
+  }, [estate]);
 
   useEffect(() => {
     if (window.location.pathname === '/admin') {
@@ -110,7 +123,7 @@ export default function App() {
   return (
     <div className="app">
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <Header activeTab={tab} onTabChange={handleTabChange} onSwitchEstate={handleSwitchEstate} showTabs={true} />
+      <Header activeTab={tab} onTabChange={handleTabChange} onSwitchEstate={handleSwitchEstate} showTabs={true} estateName={estateName} />
       <main id="main-content">
         {tab === 'home' && (
           <HomePage

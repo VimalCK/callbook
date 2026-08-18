@@ -12,9 +12,10 @@ interface HeaderProps {
   onSwitchEstate?: () => void;
   onLogout?: () => void;
   showTabs?: boolean;
+  estateName?: string;
 }
 
-export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwitchEstate, onLogout, showTabs = true }: HeaderProps) {
+export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwitchEstate, onLogout, showTabs = true, estateName }: HeaderProps) {
   const isOnline = useOnlineStatus();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -41,7 +42,10 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwit
         </div>
       )}
       <div className="header-top">
-        <h1 className="header-title">Callbook</h1>
+        <div className="header-brand">
+          <h1 className="header-title">Callbook</h1>
+          {estateName && <span className="header-estate">{estateName}</span>}
+        </div>
         <div className="header-actions">
           {onSearchToggle && (
             <button className="header-btn" onClick={onSearchToggle} aria-label="Search">
