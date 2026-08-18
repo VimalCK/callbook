@@ -3,8 +3,7 @@
   background: var(--color-bg);
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  height: calc(100dvh - 104px);
   overflow: hidden;
 }
 
@@ -23,7 +22,11 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   min-height: 0;
-  padding-bottom: var(--sp-4);
+  padding: 0 var(--sp-3) var(--sp-4);
+}
+
+.home-scroll > section {
+  min-height: 0;
 }
 
 /* Error banner */
