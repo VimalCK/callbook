@@ -854,3 +854,32 @@
 .admin-select-option.active {
   color: var(--color-primary);
 }
+
+
+/* Category management */
+.admin-cat-add-row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.admin-cat-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 var(--sp-3);
+  background: var(--color-surface-2);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  outline: none;
+  transition: box-shadow var(--duration-fast);
+}
+
+.admin-cat-input:focus {
+  box-shadow: 0 0 0 2px var(--color-primary-muted);
+}
+
+.admin-cat-input::placeholder {
+  color: var(--color-text-tertiary);
+}

@@ -6,6 +6,8 @@ import {
 import type { Category } from '../types/provider';
 import './CategoryGrid.css';
 
+const defaultIcon = <MoreHorizontal size={16} />;
+
 const categoryIcons: Record<string, React.ReactNode> = {
   'plumber': <Wrench size={16} />,
   'electrician': <Zap size={16} />,
@@ -81,7 +83,7 @@ export function CategoryGrid({ categories, activeCategory, onSelect }: CategoryG
             onClick={() => handleChipClick(cat.id)}
             aria-pressed={activeCategory === cat.id}
           >
-            <span className="cat-chip-icon">{categoryIcons[cat.id]}</span>
+            <span className="cat-chip-icon">{categoryIcons[cat.id] || defaultIcon}</span>
             <span>{cat.name}</span>
           </button>
         ))}

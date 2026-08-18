@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home, Tag } from 'lucide-react';
 import { Header } from '../components/Header';
 import './AdminPage.css';
 
@@ -30,18 +30,13 @@ interface SuggestionRow {
   submitted_at: string;
 }
 
-const CATEGORIES = [
-  { id: 'plumber', name: 'Plumbing' },
-  { id: 'electrician', name: 'Electrical' },
-  { id: 'carpenter', name: 'Carpentry' },
-  { id: 'painter', name: 'Painting' },
-  { id: 'cleaning', name: 'Cleaning' },
-  { id: 'gardener', name: 'Gardening' },
-  { id: 'appliance-repair', name: 'Appliances' },
-  { id: 'pest-control', name: 'Pest Control' },
-  { id: 'mechanic', name: 'Mechanic' },
-  { id: 'other', name: 'Other' },
-];
+interface CategoryRow {
+  id: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  provider_count?: number;
+}
 
 const EMPTY_FORM = {
   name: '',
@@ -60,12 +55,13 @@ const EMPTY_FORM = {
 type FormData = typeof EMPTY_FORM;
 
 /* Shared edit form used by both providers and suggestions */
-function EditForm({ form, onChange, onSubmit, onCancel, submitLabel }: {
+function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories }: {
   form: FormData;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   submitLabel: string;
+  categories: CategoryRow[];
 }) {
   const [catOpen, setCatOpen] = useState(false);
   const catRef = useRef<HTMLDivElement>(null);
@@ -100,12 +96,12 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel }: {
           <label>Category <span className="req">*</span></label>
           <div className="admin-custom-select" ref={catRef}>
             <button type="button" className="admin-select-trigger" onClick={() => setCatOpen(!catOpen)}>
-              <span>{CATEGORIES.find(c => c.id === form.category)?.name || 'Select'}</span>
+              <span>{categories.find(c => c.id === form.category)?.name || 'Select'}</span>
               <ChevronDown size={14} className={catOpen ? 'rotated' : ''} />
             </button>
             {catOpen && (
               <div className="admin-select-dropdown">
-                {CATEGORIES.map(c => (
+                {categories.map(c => (
                   <button
                     key={c.id}
                     type="button"
@@ -223,18 +219,21 @@ function EstateFilterDropdown({ estates, providers, value, onChange }: {
 export function AdminPage() {
   const [providers, setProviders] = useState<ProviderRow[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionRow[]>([]);
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [estates, setEstates] = useState<{ id: number; slug: string; name: string }[]>([]);
   const [estateFilter, setEstateFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [message, setMessage] = useState('');
-  const [tab, setTab] = useState<'providers' | 'suggestions'>('providers');
+  const [tab, setTab] = useState<'providers' | 'suggestions' | 'categories'>('providers');
   const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(null);
   const [editingSuggestion, setEditingSuggestion] = useState<number | null>(null);
   const [suggestionForm, setSuggestionForm] = useState(EMPTY_FORM);
+  const [newCatId, setNewCatId] = useState('');
+  const [newCatName, setNewCatName] = useState('');
 
-  const switchTab = (t: 'providers' | 'suggestions') => {
+  const switchTab = (t: 'providers' | 'suggestions' | 'categories') => {
     setTab(t);
     fetchData();
   };
@@ -272,14 +271,16 @@ export function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [pRes, sRes, eRes] = await Promise.all([
+      const [pRes, sRes, eRes, cRes] = await Promise.all([
         fetch('/api/providers'),
         fetch('/api/suggestions', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/estates'),
+        fetch('/api/categories'),
       ]);
       if (pRes.ok) setProviders(await pRes.json());
       if (sRes.ok) setSuggestions(await sRes.json());
       if (eRes.ok) setEstates(await eRes.json());
+      if (cRes.ok) setCategories(await cRes.json());
     } catch { /* server not running */ }
   };
 
@@ -467,6 +468,11 @@ export function AdminPage() {
           Suggestions
           {pendingSuggestions.length > 0 && <span className="admin-tab-badge">{pendingSuggestions.length}</span>}
         </button>
+        <button className={`admin-tab ${tab === 'categories' ? 'active' : ''}`} onClick={() => switchTab('categories')}>
+          <Tag size={15} />
+          Categories
+          <span className="admin-tab-badge">{categories.length}</span>
+        </button>
       </div>
 
       {/* ===== PROVIDERS TAB ===== */}
@@ -504,6 +510,7 @@ export function AdminPage() {
                 onSubmit={handleSubmit}
                 onCancel={() => { setShowForm(false); setEditingId(null); }}
                 submitLabel={editingId ? 'Save changes' : 'Add provider'}
+                categories={categories}
               />
             </div>
           )}
@@ -522,7 +529,7 @@ export function AdminPage() {
                   <div className="admin-row-meta">
                     <span><Phone size={11} /> {p.phone}</span>
                     {p.service_area && <span><MapPin size={11} /> {p.service_area}</span>}
-                    <span className="admin-row-cat">{CATEGORIES.find(c => c.id === p.category)?.name || p.category}</span>
+                    <span className="admin-row-cat">{categories.find(c => c.id === p.category)?.name || p.category}</span>
                   </div>
                 </div>
                 <div className="admin-row-actions">
@@ -562,7 +569,7 @@ export function AdminPage() {
                     <div className="admin-row-title">{s.name}</div>
                     <div className="admin-row-meta">
                       <span><Phone size={11} /> {s.phone}</span>
-                      <span className="admin-row-cat">{CATEGORIES.find(c => c.id === s.category)?.name || s.category}</span>
+                      <span className="admin-row-cat">{categories.find(c => c.id === s.category)?.name || s.category}</span>
                     </div>
                   </div>
                   <ChevronDown size={16} className={`admin-suggestion-chevron ${expandedSuggestion === s.id ? 'rotated' : ''}`} />
@@ -585,6 +592,7 @@ export function AdminPage() {
                           onSubmit={handleSaveSuggestion}
                           onCancel={() => setEditingSuggestion(null)}
                           submitLabel="Save"
+                          categories={categories}
                         />
                       </div>
                     ) : (
@@ -601,7 +609,7 @@ export function AdminPage() {
                             <Users size={14} />
                             <div>
                               <span className="admin-detail-label">Category</span>
-                              <span className="admin-detail-value">{CATEGORIES.find(c => c.id === s.category)?.name || s.category}</span>
+                              <span className="admin-detail-value">{categories.find(c => c.id === s.category)?.name || s.category}</span>
                             </div>
                           </div>
                           {s.service_area && (
@@ -664,6 +672,103 @@ export function AdminPage() {
                 <Inbox size={24} />
                 <p>No pending suggestions</p>
                 <span>Suggestions from users will appear here</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== CATEGORIES TAB ===== */}
+      {tab === 'categories' && (
+        <div className="admin-section">
+          <div className="admin-section-header">
+            <h2>Categories</h2>
+          </div>
+
+          {/* Add new category form */}
+          <div className="admin-cat-add" style={{ padding: '0 var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+            <div className="admin-cat-add-row">
+              <input
+                className="admin-cat-input"
+                value={newCatId}
+                onChange={e => setNewCatId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder="slug (e.g. locksmith)"
+              />
+              <input
+                className="admin-cat-input"
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                placeholder="Display name"
+              />
+              <button
+                className="admin-primary-btn"
+                onClick={async () => {
+                  if (!newCatId || !newCatName) return;
+                  const res = await fetch('/api/admin/categories', {
+                    method: 'POST',
+                    headers: authHeaders,
+                    body: JSON.stringify({ id: newCatId, name: newCatName }),
+                  });
+                  if (res.ok) {
+                    flash('Category added');
+                    setNewCatId('');
+                    setNewCatName('');
+                    fetchData();
+                  } else {
+                    const data = await res.json();
+                    flash(data.error || 'Error adding category');
+                  }
+                }}
+              >
+                <Plus size={15} />
+                Add
+              </button>
+            </div>
+          </div>
+
+          <div className="admin-table">
+            {categories.map(cat => (
+              <div key={cat.id} className="admin-row">
+                <div className="admin-row-avatar">
+                  <Tag size={16} />
+                </div>
+                <div className="admin-row-content">
+                  <div className="admin-row-title">{cat.name}</div>
+                  <div className="admin-row-meta">
+                    <span>{cat.id}</span>
+                    {cat.description && <span>{cat.description}</span>}
+                    <span>{cat.provider_count || 0} provider{(cat.provider_count || 0) !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+                <div className="admin-row-actions">
+                  <button
+                    className="admin-icon-btn danger"
+                    onClick={async () => {
+                      if (!confirm(`Delete category "${cat.name}"?`)) return;
+                      const res = await fetch(`/api/admin/categories/${cat.id}`, {
+                        method: 'DELETE',
+                        headers: authHeaders,
+                      });
+                      if (res.ok) {
+                        flash('Category deleted');
+                        fetchData();
+                      } else {
+                        const data = await res.json();
+                        flash(data.error || 'Error deleting category');
+                      }
+                    }}
+                    aria-label="Delete"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {categories.length === 0 && (
+              <div className="admin-empty">
+                <Tag size={24} />
+                <p>No categories</p>
+                <span>Add a category to get started</span>
               </div>
             )}
           </div>

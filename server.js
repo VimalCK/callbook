@@ -312,6 +312,29 @@ app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// Admin: manage categories
+app.post('/api/admin/categories', requireAdmin, (req, res) => {
+  const { id, name, description } = req.body;
+  if (!id || !name) return res.status(400).json({ error: 'id and name are required' });
+  const existing = db.prepare('SELECT id FROM categories WHERE id = ?').get(id);
+  if (existing) return res.status(409).json({ error: 'Category with this id already exists' });
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM categories').get();
+  const sortOrder = (maxOrder?.m || 0) + 1;
+  db.prepare('INSERT INTO categories (id, name, description, sort_order) VALUES (?, ?, ?, ?)').run(id, name, description || '', sortOrder);
+  res.status(201).json({ id, name, description: description || '', sort_order: sortOrder });
+});
+
+app.delete('/api/admin/categories/:id', requireAdmin, (req, res) => {
+  const catId = req.params.id;
+  const cat = db.prepare('SELECT id FROM categories WHERE id = ?').get(catId);
+  if (!cat) return res.status(404).json({ error: 'Category not found' });
+  // Don't allow deleting if providers still reference it
+  const provCount = db.prepare('SELECT COUNT(*) as n FROM providers WHERE category = ?').get(catId);
+  if (provCount.n > 0) return res.status(409).json({ error: `Cannot delete: ${provCount.n} provider(s) still use this category` });
+  db.prepare('DELETE FROM categories WHERE id = ?').run(catId);
+  res.json({ success: true });
+});
+
 // Admin: manage estates
 app.post('/api/admin/estates', requireAdmin, (req, res) => {
   const { name, description } = req.body;

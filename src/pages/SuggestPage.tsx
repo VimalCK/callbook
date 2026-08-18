@@ -2,18 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, CheckCircle, ChevronDown } from 'lucide-react';
 import './SuggestPage.css';
 
-const CATEGORIES = [
-  { id: 'plumber', name: 'Plumbing' },
-  { id: 'electrician', name: 'Electrical' },
-  { id: 'carpenter', name: 'Carpentry' },
-  { id: 'painter', name: 'Painting' },
-  { id: 'cleaning', name: 'Cleaning' },
-  { id: 'gardener', name: 'Gardening' },
-  { id: 'appliance-repair', name: 'Appliances' },
-  { id: 'pest-control', name: 'Pest Control' },
-  { id: 'mechanic', name: 'Mechanic' },
-  { id: 'other', name: 'Other' },
-];
+interface CategoryItem {
+  id: string;
+  name: string;
+}
 
 interface Estate {
   id: number;
@@ -26,7 +18,7 @@ interface SuggestPageProps {
 }
 
 /* Custom category dropdown */
-function CategoryDropdown({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+function CategoryDropdown({ value, onChange, categories }: { value: string; onChange: (val: string) => void; categories: CategoryItem[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -39,7 +31,7 @@ function CategoryDropdown({ value, onChange }: { value: string; onChange: (val: 
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  const selectedName = CATEGORIES.find(c => c.id === value)?.name || 'Select';
+  const selectedName = categories.find(c => c.id === value)?.name || 'Select';
 
   return (
     <div className="combobox-wrap" ref={ref}>
@@ -49,7 +41,7 @@ function CategoryDropdown({ value, onChange }: { value: string; onChange: (val: 
       </button>
       {open && (
         <div className="combobox-dropdown">
-          {CATEGORIES.map(c => (
+          {categories.map(c => (
             <button
               key={c.id}
               type="button"
@@ -66,9 +58,10 @@ function CategoryDropdown({ value, onChange }: { value: string; onChange: (val: 
 }
 
 export function SuggestPage({ estate }: SuggestPageProps) {
-  const [form, setForm] = useState({ name: '', phone: '', category: 'plumber', service_area: '', note: '' });
+  const [form, setForm] = useState({ name: '', phone: '', category: '', service_area: '', note: '' });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
 
   // Estate combobox state
   const [estates, setEstates] = useState<Estate[]>([]);
@@ -76,6 +69,18 @@ export function SuggestPage({ estate }: SuggestPageProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedEstateSlug, setSelectedEstateSlug] = useState(estate);
   const comboRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(r => r.ok ? r.json() : [])
+      .then((data: CategoryItem[]) => {
+        setCategories(data);
+        if (data.length > 0 && !form.category) {
+          setForm(prev => ({ ...prev, category: data[0].id }));
+        }
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch('/api/estates')
@@ -148,7 +153,7 @@ export function SuggestPage({ estate }: SuggestPageProps) {
 
       if (res.ok) {
         setSubmitted(true);
-        setForm({ name: '', phone: '', category: 'plumber', service_area: '', note: '' });
+        setForm({ name: '', phone: '', category: categories[0]?.id || '', service_area: '', note: '' });
       } else {
         setError('Could not submit. Please try again.');
       }
@@ -237,6 +242,7 @@ export function SuggestPage({ estate }: SuggestPageProps) {
           <CategoryDropdown
             value={form.category}
             onChange={(val) => setForm(prev => ({ ...prev, category: val }))}
+            categories={categories}
           />
         </div>
 
