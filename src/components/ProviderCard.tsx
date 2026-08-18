@@ -35,9 +35,9 @@ export function ProviderCard({ provider, categoryName, onViewDetails }: Provider
           <h3 className="pcard-name">{displayName}</h3>
           <span className="pcard-category">{label}</span>
         </div>
-        <div className="pcard-bottom-row">
-          <p className="pcard-desc">{provider.services.slice(0, 3).join(' · ')}</p>
-        </div>
+        {provider.businessName && provider.name !== provider.businessName && (
+          <p className="pcard-desc">{provider.name}</p>
+        )}
         {(provider.phone || provider.whatsapp) && (
           <span className="pcard-area">
             <Phone size={10} />
