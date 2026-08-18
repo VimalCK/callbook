@@ -33,7 +33,6 @@ export function ProviderCard({ provider, categoryName, onViewDetails }: Provider
       <div className="pcard-content">
         <div className="pcard-top-row">
           <h3 className="pcard-name">{displayName}</h3>
-          <span className="pcard-category">{label}</span>
         </div>
         {provider.businessName && provider.name !== provider.businessName && (
           <p className="pcard-desc">{provider.name}</p>
