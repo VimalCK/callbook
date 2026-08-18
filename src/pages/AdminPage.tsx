@@ -26,6 +26,7 @@ interface SuggestionRow {
   service_area: string | null;
   note: string | null;
   estate_name: string | null;
+  metadata: string | null;
   status: string;
   submitted_at: string;
 }
@@ -389,17 +390,18 @@ export function AdminPage() {
 
   const handleEditSuggestion = (s: SuggestionRow) => {
     setEditingSuggestion(s.id);
+    const meta = s.metadata ? JSON.parse(s.metadata) : {};
     setSuggestionForm({
       name: s.name,
-      business_name: '',
+      business_name: meta.business_name || '',
       category: s.category,
       description: s.note || '',
       phone: s.phone,
-      whatsapp: '',
+      whatsapp: meta.whatsapp || '',
       service_area: s.service_area || '',
-      working_hours: '',
-      is_verified: false,
-      services: '',
+      working_hours: meta.working_hours || '',
+      is_verified: meta.is_verified || false,
+      services: meta.services || '',
       estate_name: s.estate_name || '',
     });
   };
@@ -417,6 +419,11 @@ export function AdminPage() {
         service_area: suggestionForm.service_area || null,
         note: suggestionForm.description || null,
         estate_name: suggestionForm.estate_name || null,
+        business_name: suggestionForm.business_name || null,
+        whatsapp: suggestionForm.whatsapp || null,
+        working_hours: suggestionForm.working_hours || null,
+        services: suggestionForm.services || null,
+        is_verified: suggestionForm.is_verified || false,
       }),
     });
     if (res.ok) {

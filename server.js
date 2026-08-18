@@ -67,6 +67,7 @@ db.exec(`
 try { db.exec('ALTER TABLE providers ADD COLUMN estate_id INTEGER DEFAULT 1'); } catch { /* already exists */ }
 try { db.exec('ALTER TABLE suggestions ADD COLUMN estate_id INTEGER DEFAULT 1'); } catch { /* already exists */ }
 try { db.exec('ALTER TABLE suggestions ADD COLUMN estate_name TEXT'); } catch { /* already exists */ }
+try { db.exec('ALTER TABLE suggestions ADD COLUMN metadata TEXT'); } catch { /* already exists */ }
 
 // Seed data if estates table is empty
 const estateCount = db.prepare('SELECT COUNT(*) as n FROM estates').get();
@@ -273,13 +274,14 @@ app.delete('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
 });
 
 app.put('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
-  const { name, phone, category, service_area, note, estate_name } = req.body;
+  const { name, phone, category, service_area, note, estate_name, business_name, whatsapp, working_hours, services, is_verified } = req.body;
   const existing = db.prepare('SELECT id FROM suggestions WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
+  const metadata = JSON.stringify({ business_name, whatsapp, working_hours, services, is_verified });
   db.prepare(`
-    UPDATE suggestions SET name = ?, phone = ?, category = ?, service_area = ?, note = ?, estate_name = ?
+    UPDATE suggestions SET name = ?, phone = ?, category = ?, service_area = ?, note = ?, estate_name = ?, metadata = ?
     WHERE id = ?
-  `).run(name, phone, category, service_area || null, note || null, estate_name || null, req.params.id);
+  `).run(name, phone, category, service_area || null, note || null, estate_name || null, metadata, req.params.id);
   res.json({ success: true });
 });
 
@@ -309,8 +311,21 @@ app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
     }
   }
 
-  db.prepare('INSERT INTO providers (estate_id, name, category, phone, service_area, description) VALUES (?, ?, ?, ?, ?, ?)').run(
-    estateId, suggestion.name, suggestion.category, suggestion.phone, suggestion.service_area || null, suggestion.note || ''
+  // Parse metadata for extra fields
+  const meta = suggestion.metadata ? JSON.parse(suggestion.metadata) : {};
+
+  db.prepare(`INSERT INTO providers (estate_id, name, business_name, category, phone, whatsapp, service_area, working_hours, description, is_verified, services) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    estateId,
+    suggestion.name,
+    meta.business_name || null,
+    suggestion.category,
+    suggestion.phone,
+    meta.whatsapp || null,
+    suggestion.service_area || null,
+    meta.working_hours || null,
+    suggestion.note || '',
+    meta.is_verified ? 1 : 0,
+    JSON.stringify(meta.services ? meta.services.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
   );
   db.prepare("UPDATE suggestions SET status = 'approved' WHERE id = ?").run(req.params.id);
   res.json({ success: true });
