@@ -141,6 +141,25 @@ function getEstateId(slug) {
   return row ? row.id : null;
 }
 
+function resolveEstateId(estateName) {
+  if (!estateName) return null;
+  const trimmedName = estateName.trim();
+  if (!trimmedName) return null;
+
+  const bySlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(trimmedName);
+  if (bySlug) return bySlug.id;
+
+  const byName = db.prepare('SELECT id FROM estates WHERE LOWER(name) = LOWER(?)').get(trimmedName);
+  if (byName) return byName.id;
+
+  const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const byGeneratedSlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(slug);
+  if (byGeneratedSlug) return byGeneratedSlug.id;
+
+  const result = db.prepare('INSERT INTO estates (slug, name, description) VALUES (?, ?, ?)').run(slug, trimmedName, '');
+  return result.lastInsertRowid;
+}
+
 // ===== API ROUTES =====
 
 // Estates
@@ -162,19 +181,19 @@ app.get('/api/providers', (req, res) => {
   if (estateSlug) {
     const estateId = getEstateId(estateSlug);
     if (!estateId) return res.json([]);
-    rows = db.prepare(`SELECT * FROM providers WHERE estate_id = ? ORDER BY
-      CASE WHEN COALESCE(business_name, name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
-      LOWER(COALESCE(business_name, name)) ASC`).all(estateId);
+    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.estate_id = ? ORDER BY
+      CASE WHEN COALESCE(providers.business_name, providers.name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
+      LOWER(COALESCE(providers.business_name, providers.name)) ASC`).all(estateId);
   } else {
-    rows = db.prepare(`SELECT * FROM providers ORDER BY
-      CASE WHEN COALESCE(business_name, name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
-      LOWER(COALESCE(business_name, name)) ASC`).all();
+    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id ORDER BY
+      CASE WHEN COALESCE(providers.business_name, providers.name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
+      LOWER(COALESCE(providers.business_name, providers.name)) ASC`).all();
   }
   res.json(rows.map(row => ({ ...row, is_verified: Boolean(row.is_verified), services: JSON.parse(row.services) })));
 });
 
 app.get('/api/providers/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM providers WHERE id = ?').get(req.params.id);
+  const row = db.prepare('SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found' });
   res.json({ ...row, is_verified: Boolean(row.is_verified), services: JSON.parse(row.services) });
 });
@@ -234,9 +253,9 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 app.post('/api/admin/providers', requireAdmin, (req, res) => {
-  const { name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, services, estate } = req.body;
+  const { name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, services, estate, estate_name } = req.body;
   if (!name || !phone || !category) return res.status(400).json({ error: 'name, phone, and category are required' });
-  const estateId = getEstateId(estate) || 1;
+  const estateId = resolveEstateId(estate_name) || getEstateId(estate) || 1;
   const result = db.prepare(`
     INSERT INTO providers (estate_id, name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, services)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -245,14 +264,15 @@ app.post('/api/admin/providers', requireAdmin, (req, res) => {
 });
 
 app.put('/api/admin/providers/:id', requireAdmin, (req, res) => {
-  const { name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, services } = req.body;
-  const existing = db.prepare('SELECT id FROM providers WHERE id = ?').get(req.params.id);
+  const { name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, services, estate_name } = req.body;
+  const existing = db.prepare('SELECT id, estate_id FROM providers WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
+  const estateId = resolveEstateId(estate_name) || existing.estate_id;
   db.prepare(`
-    UPDATE providers SET name = ?, business_name = ?, category = ?, description = ?, phone = ?, whatsapp = ?,
+    UPDATE providers SET estate_id = ?, name = ?, business_name = ?, category = ?, description = ?, phone = ?, whatsapp = ?,
       service_area = ?, address = ?, working_hours = ?, image = ?, is_verified = ?, services = ?, updated_at = datetime('now')
     WHERE id = ?
-  `).run(name, business_name || null, category, description || '', phone, whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []), req.params.id);
+  `).run(estateId, name, business_name || null, category, description || '', phone, whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []), req.params.id);
   res.json({ success: true });
 });
 

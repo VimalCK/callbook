@@ -6,6 +6,7 @@ import './AdminPage.css';
 interface ProviderRow {
   id: number;
   estate_id: number;
+  estate_name?: string;
   name: string;
   business_name: string | null;
   category: string;
@@ -319,6 +320,7 @@ export function AdminPage() {
     e.preventDefault();
     const payload = {
       ...form,
+      estate_name: form.estate_name || null,
       business_name: form.business_name || null,
       whatsapp: form.whatsapp || null,
       service_area: form.service_area || null,
@@ -355,7 +357,7 @@ export function AdminPage() {
       working_hours: p.working_hours || '',
       is_verified: p.is_verified,
       services: (p.services || []).join(', '),
-      estate_name: '',
+      estate_name: p.estate_name || estates.find(e => e.id === p.estate_id)?.name || '',
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
