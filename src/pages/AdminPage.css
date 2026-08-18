@@ -349,7 +349,7 @@
   padding: var(--sp-5);
   margin-bottom: var(--sp-4);
   flex-shrink: 0;
-  max-height: 60vh;
+  max-height: 80vh;
   overflow-y: auto;
 }
 
