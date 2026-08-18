@@ -325,7 +325,7 @@ app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
     meta.working_hours || null,
     suggestion.note || '',
     meta.is_verified ? 1 : 0,
-    JSON.stringify(meta.services ? meta.services.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
+    JSON.stringify(meta.services ? meta.services.split(',').map(s => s.trim()).filter(Boolean) : [])
   );
   db.prepare("UPDATE suggestions SET status = 'approved' WHERE id = ?").run(req.params.id);
   res.json({ success: true });
