@@ -3,6 +3,23 @@ import {
   ArrowLeft, Phone, MessageCircle, MapPin, Clock,
   BadgeCheck, Share2, Copy, X, Calendar
 } from 'lucide-react';
+
+/* Auto-linkify URLs in text */
+function Linkify({ text }: { text: string }) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        urlRegex.test(part) ? (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="detail-link">{part}</a>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
 import type { Provider } from '../types/provider';
 import { getCallUrl, getWhatsAppUrl, shareProvider, copyPhone } from '../utils/share';
 import './ProviderDetail.css';
@@ -116,7 +133,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
       {/* Description */}
       <div className="detail-card">
         <h2 className="detail-card-title">About</h2>
-        <p className="detail-desc">{provider.description}</p>
+        <p className="detail-desc"><Linkify text={provider.description} /></p>
       </div>
 
       {/* Contact & info */}
