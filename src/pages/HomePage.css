@@ -4,6 +4,7 @@
   display: flex;
   flex-direction: column;
   height: calc(100dvh - 104px);
+  overflow: hidden;
 }
 
 /* Sticky top area — search + categories */
@@ -20,6 +21,8 @@
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  padding-bottom: var(--sp-4);
 }
 
 /* Error banner */
@@ -121,7 +124,6 @@
   flex-direction: column;
   background: var(--color-surface-2);
   border-radius: var(--radius-lg);
-  overflow: hidden;
 }
 
 /* FAB */
