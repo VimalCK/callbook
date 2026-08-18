@@ -229,6 +229,7 @@
   font-size: var(--text-md);
   color: var(--color-text-secondary);
   line-height: 1.6;
+  white-space: pre-line;
 }
 
 /* Info rows */
