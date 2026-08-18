@@ -490,7 +490,7 @@ export function AdminPage() {
           </div>
 
           {/* Estate filter */}
-          {estates.length > 1 && (
+          {estates.length > 0 && (
             <EstateFilterDropdown
               estates={estates}
               providers={providers}
