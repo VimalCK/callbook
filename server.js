@@ -161,9 +161,9 @@ app.get('/api/providers', (req, res) => {
   if (estateSlug) {
     const estateId = getEstateId(estateSlug);
     if (!estateId) return res.json([]);
-    rows = db.prepare('SELECT * FROM providers WHERE estate_id = ? ORDER BY is_verified DESC, updated_at DESC').all(estateId);
+    rows = db.prepare('SELECT * FROM providers WHERE estate_id = ? ORDER BY name ASC').all(estateId);
   } else {
-    rows = db.prepare('SELECT * FROM providers ORDER BY is_verified DESC, updated_at DESC').all();
+    rows = db.prepare('SELECT * FROM providers ORDER BY name ASC').all();
   }
   res.json(rows.map(row => ({ ...row, is_verified: Boolean(row.is_verified), services: JSON.parse(row.services) })));
 });

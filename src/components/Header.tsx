@@ -84,7 +84,7 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwit
             onClick={() => onTabChange('home')}
             aria-current={activeTab === 'home' ? 'page' : undefined}
           >
-            Directory
+            Services
           </button>
           <button
             className={`header-tab ${activeTab === 'suggest' ? 'active' : ''}`}
