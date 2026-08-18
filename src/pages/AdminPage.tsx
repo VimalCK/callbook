@@ -520,7 +520,7 @@ export function AdminPage() {
 
           <div className="admin-table">
             {filteredProviders.map(p => (
-              <div key={p.id} className="admin-row">
+              <div key={p.id} className="admin-row" style={{ cursor: 'pointer' }} onClick={() => handleEdit(p)}>
                 <div className="admin-row-avatar">
                   {(p.business_name || p.name).charAt(0)}
                 </div>
@@ -535,10 +535,7 @@ export function AdminPage() {
                     <span className="admin-row-cat">{categories.find(c => c.id === p.category)?.name || p.category}</span>
                   </div>
                 </div>
-                <div className="admin-row-actions">
-                  <button className="admin-icon-btn" onClick={() => handleEdit(p)} aria-label="Edit">
-                    <Pencil size={15} />
-                  </button>
+                <div className="admin-row-actions" onClick={e => e.stopPropagation()}>
                   <button className="admin-icon-btn danger" onClick={() => handleDelete(p.id)} aria-label="Delete">
                     <Trash2 size={15} />
                   </button>
