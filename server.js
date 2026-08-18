@@ -335,6 +335,15 @@ app.delete('/api/admin/categories/:id', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+app.put('/api/admin/categories/:id', requireAdmin, (req, res) => {
+  const catId = req.params.id;
+  const { name, description } = req.body;
+  const cat = db.prepare('SELECT id FROM categories WHERE id = ?').get(catId);
+  if (!cat) return res.status(404).json({ error: 'Category not found' });
+  db.prepare('UPDATE categories SET name = ?, description = ? WHERE id = ?').run(name || '', description || '', catId);
+  res.json({ success: true });
+});
+
 // Admin: manage estates
 app.post('/api/admin/estates', requireAdmin, (req, res) => {
   const { name, description } = req.body;

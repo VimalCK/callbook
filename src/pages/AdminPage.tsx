@@ -232,6 +232,9 @@ export function AdminPage() {
   const [suggestionForm, setSuggestionForm] = useState(EMPTY_FORM);
   const [newCatId, setNewCatId] = useState('');
   const [newCatName, setNewCatName] = useState('');
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editCatName, setEditCatName] = useState('');
+  const [editCatDesc, setEditCatDesc] = useState('');
 
   const switchTab = (t: 'providers' | 'suggestions' | 'categories') => {
     setTab(t);
@@ -729,39 +732,94 @@ export function AdminPage() {
           <div className="admin-table">
             {categories.map(cat => (
               <div key={cat.id} className="admin-row">
-                <div className="admin-row-avatar">
-                  <Tag size={16} />
-                </div>
-                <div className="admin-row-content">
-                  <div className="admin-row-title">{cat.name}</div>
-                  <div className="admin-row-meta">
-                    <span>{cat.id}</span>
-                    {cat.description && <span>{cat.description}</span>}
-                    <span>{cat.provider_count || 0} provider{(cat.provider_count || 0) !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-                <div className="admin-row-actions">
-                  <button
-                    className="admin-icon-btn danger"
-                    onClick={async () => {
-                      if (!confirm(`Delete category "${cat.name}"?`)) return;
-                      const res = await fetch(`/api/admin/categories/${cat.id}`, {
-                        method: 'DELETE',
-                        headers: authHeaders,
-                      });
-                      if (res.ok) {
-                        flash('Category deleted');
-                        fetchData();
-                      } else {
-                        const data = await res.json();
-                        flash(data.error || 'Error deleting category');
-                      }
-                    }}
-                    aria-label="Delete"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+                {editingCatId === cat.id ? (
+                  /* Editing mode */
+                  <>
+                    <div className="admin-row-avatar">
+                      <Tag size={16} />
+                    </div>
+                    <div className="admin-row-content" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        className="admin-cat-input"
+                        value={editCatName}
+                        onChange={e => setEditCatName(e.target.value)}
+                        placeholder="Name"
+                        style={{ flex: 1 }}
+                      />
+                      <input
+                        className="admin-cat-input"
+                        value={editCatDesc}
+                        onChange={e => setEditCatDesc(e.target.value)}
+                        placeholder="Description"
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                    <div className="admin-row-actions">
+                      <button
+                        className="admin-icon-btn approve"
+                        onClick={async () => {
+                          const res = await fetch(`/api/admin/categories/${cat.id}`, {
+                            method: 'PUT',
+                            headers: authHeaders,
+                            body: JSON.stringify({ name: editCatName, description: editCatDesc }),
+                          });
+                          if (res.ok) {
+                            flash('Category updated');
+                            setEditingCatId(null);
+                            fetchData();
+                          }
+                        }}
+                        aria-label="Save"
+                      >
+                        <Check size={15} />
+                      </button>
+                      <button
+                        className="admin-icon-btn"
+                        onClick={() => setEditingCatId(null)}
+                        aria-label="Cancel"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* View mode — click to edit */
+                  <>
+                    <div className="admin-row-avatar" style={{ cursor: 'pointer' }} onClick={() => { setEditingCatId(cat.id); setEditCatName(cat.name); setEditCatDesc(cat.description || ''); }}>
+                      <Tag size={16} />
+                    </div>
+                    <div className="admin-row-content" style={{ cursor: 'pointer' }} onClick={() => { setEditingCatId(cat.id); setEditCatName(cat.name); setEditCatDesc(cat.description || ''); }}>
+                      <div className="admin-row-title">{cat.name}</div>
+                      <div className="admin-row-meta">
+                        <span>{cat.id}</span>
+                        {cat.description && <span>{cat.description}</span>}
+                        <span>{cat.provider_count || 0} provider{(cat.provider_count || 0) !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      <button
+                        className="admin-icon-btn danger"
+                        onClick={async () => {
+                          if (!confirm(`Delete category "${cat.name}"?`)) return;
+                          const res = await fetch(`/api/admin/categories/${cat.id}`, {
+                            method: 'DELETE',
+                            headers: authHeaders,
+                          });
+                          if (res.ok) {
+                            flash('Category deleted');
+                            fetchData();
+                          } else {
+                            const data = await res.json();
+                            flash(data.error || 'Error deleting category');
+                          }
+                        }}
+                        aria-label="Delete"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
             {categories.length === 0 && (
