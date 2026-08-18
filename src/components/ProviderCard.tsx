@@ -5,12 +5,13 @@ import './ProviderCard.css';
 
 interface ProviderCardProps {
   provider: Provider;
+  categoryName?: string;
   onViewDetails: (provider: Provider) => void;
 }
 
-export function ProviderCard({ provider, onViewDetails }: ProviderCardProps) {
+export function ProviderCard({ provider, categoryName, onViewDetails }: ProviderCardProps) {
   const displayName = provider.businessName || provider.name;
-  const categoryLabel = provider.category.replace('-', ' ');
+  const label = categoryName || provider.category.replace(/-/g, ' ');
 
   return (
     <article className="pcard" onClick={() => onViewDetails(provider)} role="button" tabIndex={0}
@@ -32,7 +33,7 @@ export function ProviderCard({ provider, onViewDetails }: ProviderCardProps) {
       <div className="pcard-content">
         <div className="pcard-top-row">
           <h3 className="pcard-name">{displayName}</h3>
-          <span className="pcard-category">{categoryLabel}</span>
+          <span className="pcard-category">{label}</span>
         </div>
         <div className="pcard-bottom-row">
           <p className="pcard-desc">{provider.services.slice(0, 3).join(' · ')}</p>

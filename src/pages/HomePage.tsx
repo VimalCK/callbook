@@ -128,7 +128,7 @@ export function HomePage({ providers, categories, isLoading, error, onRefetch, o
             {results.length > 0 ? (
               <div className="provider-feed" role="list">
                 {results.map(provider => (
-                  <ProviderCard key={provider.id} provider={provider} onViewDetails={onViewProvider} />
+                  <ProviderCard key={provider.id} provider={provider} categoryName={categories.find(c => c.id === provider.category)?.name} onViewDetails={onViewProvider} />
                 ))}
               </div>
             ) : (
