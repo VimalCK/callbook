@@ -270,7 +270,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 0 var(--sp-4);
 }
 
 .admin-section-header {
@@ -278,6 +277,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--sp-3);
+  padding: 0 var(--sp-4);
   flex-shrink: 0;
 }
 
@@ -708,6 +708,7 @@
 .admin-filter-bar {
   position: relative;
   margin-bottom: var(--sp-3);
+  padding: 0 var(--sp-4);
   flex-shrink: 0;
 }
 
