@@ -883,3 +883,61 @@
 .admin-cat-input::placeholder {
   color: var(--color-text-tertiary);
 }
+
+
+/* Custom confirm dialog */
+.admin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-overlay);
+  padding: var(--sp-4);
+  animation: fadeIn var(--duration-fast) var(--ease-out);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.admin-dialog {
+  width: 100%;
+  max-width: 320px;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-6);
+  animation: dialogIn var(--duration-base) var(--ease-out);
+}
+
+@keyframes dialogIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.admin-dialog-message {
+  font-size: var(--text-md);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--sp-5);
+  line-height: 1.5;
+}
+
+.admin-dialog-actions {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.admin-dialog-actions .admin-secondary-btn,
+.admin-dialog-actions .admin-primary-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-dialog-danger {
+  background: var(--color-error) !important;
+}

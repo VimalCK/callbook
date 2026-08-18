@@ -235,6 +235,7 @@ export function AdminPage() {
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
   const [editCatDesc, setEditCatDesc] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const switchTab = (t: 'providers' | 'suggestions' | 'categories') => {
     setTab(t);
@@ -357,9 +358,14 @@ export function AdminPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this provider permanently?')) return;
-    const res = await fetch(`/api/admin/providers/${id}`, { method: 'DELETE', headers: authHeaders });
-    if (res.ok) { flash('Provider deleted'); fetchData(); }
+    setConfirmDialog({
+      message: 'Delete this provider permanently?',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const res = await fetch(`/api/admin/providers/${id}`, { method: 'DELETE', headers: authHeaders });
+        if (res.ok) { flash('Provider deleted'); fetchData(); }
+      },
+    });
   };
 
   const handleApprove = async (id: number) => {
@@ -368,9 +374,14 @@ export function AdminPage() {
   };
 
   const handleDismiss = async (id: number) => {
-    if (!confirm('Dismiss this suggestion?')) return;
-    const res = await fetch(`/api/admin/suggestions/${id}`, { method: 'DELETE', headers: authHeaders });
-    if (res.ok) { flash('Suggestion dismissed'); fetchData(); setExpandedSuggestion(null); }
+    setConfirmDialog({
+      message: 'Dismiss this suggestion?',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const res = await fetch(`/api/admin/suggestions/${id}`, { method: 'DELETE', headers: authHeaders });
+        if (res.ok) { flash('Suggestion dismissed'); fetchData(); setExpandedSuggestion(null); }
+      },
+    });
   };
 
   const handleEditSuggestion = (s: SuggestionRow) => {
@@ -797,18 +808,23 @@ export function AdminPage() {
                       <button
                         className="admin-icon-btn danger"
                         onClick={async () => {
-                          if (!confirm(`Delete category "${cat.name}"?`)) return;
-                          const res = await fetch(`/api/admin/categories/${cat.id}`, {
-                            method: 'DELETE',
-                            headers: authHeaders,
+                          setConfirmDialog({
+                            message: `Delete category "${cat.name}"?`,
+                            onConfirm: async () => {
+                              setConfirmDialog(null);
+                              const res = await fetch(`/api/admin/categories/${cat.id}`, {
+                                method: 'DELETE',
+                                headers: authHeaders,
+                              });
+                              if (res.ok) {
+                                flash('Category deleted');
+                                fetchData();
+                              } else {
+                                const data = await res.json();
+                                flash(data.error || 'Error deleting category');
+                              }
+                            },
                           });
-                          if (res.ok) {
-                            flash('Category deleted');
-                            fetchData();
-                          } else {
-                            const data = await res.json();
-                            flash(data.error || 'Error deleting category');
-                          }
                         }}
                         aria-label="Delete"
                       >
@@ -830,6 +846,18 @@ export function AdminPage() {
         </div>
       )}
     </div>
+    {/* Custom confirm dialog */}
+    {confirmDialog && (
+      <div className="admin-overlay" onClick={() => setConfirmDialog(null)}>
+        <div className="admin-dialog" onClick={e => e.stopPropagation()}>
+          <p className="admin-dialog-message">{confirmDialog.message}</p>
+          <div className="admin-dialog-actions">
+            <button className="admin-secondary-btn" onClick={() => setConfirmDialog(null)}>Cancel</button>
+            <button className="admin-primary-btn admin-dialog-danger" onClick={confirmDialog.onConfirm}>Delete</button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }
