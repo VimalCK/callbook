@@ -1,6 +1,7 @@
 import { Phone, MessageCircle, BadgeCheck, MapPin } from 'lucide-react';
 import type { Provider } from '../types/provider';
 import { getCallUrl, getWhatsAppUrl } from '../utils/share';
+import { getInitials } from '../utils/initials';
 import './ProviderCard.css';
 
 interface ProviderCardProps {
@@ -22,7 +23,7 @@ export function ProviderCard({ provider, categoryName, onViewDetails }: Provider
         {provider.image ? (
           <img src={provider.image} alt="" loading="lazy" />
         ) : (
-          <span className="pcard-initial">{displayName.charAt(0)}</span>
+          <span className="pcard-initial">{getInitials(displayName)}</span>
         )}
         {provider.isVerified && (
           <span className="pcard-verified" aria-label="Verified"><BadgeCheck size={11} /></span>

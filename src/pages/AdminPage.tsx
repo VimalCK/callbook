@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home, Tag } from 'lucide-react';
 import { Header } from '../components/Header';
+import { getInitials } from '../utils/initials';
 import './AdminPage.css';
 
 interface ProviderRow {
@@ -545,7 +546,7 @@ export function AdminPage() {
             {filteredProviders.map(p => (
               <div key={p.id} className="admin-row" style={{ cursor: 'pointer' }} onClick={() => handleEdit(p)}>
                 <div className="admin-row-avatar">
-                  {(p.business_name || p.name).charAt(0)}
+                  {getInitials(p.business_name || p.name)}
                 </div>
                 <div className="admin-row-content">
                   <div className="admin-row-title">

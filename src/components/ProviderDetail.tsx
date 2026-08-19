@@ -22,6 +22,7 @@ function Linkify({ text }: { text: string }) {
 }
 import type { Provider } from '../types/provider';
 import { getCallUrl, getWhatsAppUrl, shareProvider, copyPhone } from '../utils/share';
+import { getInitials } from '../utils/initials';
 import './ProviderDetail.css';
 
 interface ProviderDetailProps {
@@ -61,7 +62,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
           {provider.image ? (
             <img src={provider.image} alt="" />
           ) : (
-            displayName.charAt(0)
+            getInitials(displayName)
           )}
         </div>
         <div className="detail-topbar-info">
@@ -84,7 +85,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
             {provider.image ? (
               <img src={provider.image} alt="" />
             ) : (
-              <span>{displayName.charAt(0)}</span>
+              <span>{getInitials(displayName)}</span>
             )}
           </div>
           {provider.isVerified && (
