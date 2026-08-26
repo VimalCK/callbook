@@ -27,6 +27,8 @@
 
 .cat-chip {
   flex: 0 0 auto;
+  width: max-content;
+  max-width: none;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -39,8 +41,18 @@
   font-weight: var(--weight-normal);
   color: var(--color-text-secondary);
   white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
   transition: all var(--duration-fast) var(--ease-out);
   user-select: none;
+}
+
+.cat-chip-label {
+  flex: 0 0 auto;
+  min-width: max-content;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .cat-chip:hover {

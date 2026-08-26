@@ -84,7 +84,7 @@ export function CategoryGrid({ categories, activeCategory, onSelect }: CategoryG
             aria-pressed={activeCategory === cat.id}
           >
             <span className="cat-chip-icon">{categoryIcons[cat.id] || defaultIcon}</span>
-            <span>{cat.name}</span>
+            <span className="cat-chip-label">{cat.name}</span>
           </button>
         ))}
       </div>
