@@ -109,9 +109,11 @@ export function SuggestPage({ estate }: SuggestPageProps) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const filteredEstates = estates.filter(e =>
-    formatEstate(e).toLowerCase().includes(estateInput.toLowerCase())
-  );
+  const selectedEstate = estates.find(e => e.slug === selectedEstateSlug);
+  const isShowingSelectedEstate = selectedEstate && estateInput === formatEstate(selectedEstate);
+  const filteredEstates = isShowingSelectedEstate
+    ? estates
+    : estates.filter(e => formatEstate(e).toLowerCase().includes(estateInput.toLowerCase()));
 
   const isNewEstate = estateInput.trim() && !estates.some(
     e => formatEstate(e).toLowerCase() === estateInput.trim().toLowerCase()
@@ -193,7 +195,7 @@ export function SuggestPage({ estate }: SuggestPageProps) {
       <form className="suggest-form" onSubmit={handleSubmit}>
         {/* Estate combobox */}
         <div className="suggest-field" ref={comboRef}>
-          <label htmlFor="s-estate">Estate, location <span className="req">*</span></label>
+          <label htmlFor="s-estate">Select an existing estate or enter a new estate, location <span className="req">*</span></label>
           <div className="combobox-wrap">
             <input
               id="s-estate"
@@ -202,7 +204,7 @@ export function SuggestPage({ estate }: SuggestPageProps) {
               value={estateInput}
               onChange={e => handleEstateInputChange(e.target.value)}
               onFocus={() => setShowDropdown(true)}
-              placeholder="Type or select a community"
+              placeholder="Estate, location"
               autoComplete="off"
             />
             <ChevronDown size={16} className="combobox-arrow" />
