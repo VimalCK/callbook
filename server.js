@@ -1,6 +1,7 @@
 import express from 'express';
 import Database from 'better-sqlite3';
 import cors from 'cors';
+import { existsSync, copyFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -9,7 +10,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Database setup
-const db = new Database(join(__dirname, 'lokall.db'));
+const bundledDbPath = join(__dirname, 'lokall.db');
+const dbPath = process.env.DATABASE_PATH || bundledDbPath;
+
+if (process.env.DATABASE_PATH && !existsSync(dbPath) && existsSync(bundledDbPath)) {
+  mkdirSync(dirname(dbPath), { recursive: true });
+  copyFileSync(bundledDbPath, dbPath);
+}
+
+const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
