@@ -91,11 +91,12 @@
 }
 
 .estate-card-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
 }
 
 .estate-card-arrow {

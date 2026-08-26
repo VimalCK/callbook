@@ -62,7 +62,7 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwit
                   {onSwitchEstate && (
                     <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onSwitchEstate(); }}>
                       <RefreshCw size={15} />
-                      <span>Change community</span>
+                      <span>Change Estate</span>
                     </button>
                   )}
                   {onLogout && (

@@ -11,6 +11,7 @@ interface Estate {
   id: number;
   slug: string;
   name: string;
+  description: string;
 }
 
 interface SuggestPageProps {
@@ -70,6 +71,8 @@ export function SuggestPage({ estate }: SuggestPageProps) {
   const [selectedEstateSlug, setSelectedEstateSlug] = useState(estate);
   const comboRef = useRef<HTMLDivElement>(null);
 
+  const formatEstate = (e: Estate) => [e.name, e.description].filter(Boolean).join(', ');
+
   useEffect(() => {
     fetch('/api/categories')
       .then(r => r.ok ? r.json() : [])
@@ -90,7 +93,7 @@ export function SuggestPage({ estate }: SuggestPageProps) {
         setEstates(data);
         // Set initial display name from current estate
         const current = data.find((e: Estate) => e.slug === estate);
-        if (current) setEstateInput(current.name);
+        if (current) setEstateInput(formatEstate(current));
       })
       .catch(() => {});
   }, [estate]);
@@ -107,15 +110,15 @@ export function SuggestPage({ estate }: SuggestPageProps) {
   }, []);
 
   const filteredEstates = estates.filter(e =>
-    e.name.toLowerCase().includes(estateInput.toLowerCase())
+    formatEstate(e).toLowerCase().includes(estateInput.toLowerCase())
   );
 
   const isNewEstate = estateInput.trim() && !estates.some(
-    e => e.name.toLowerCase() === estateInput.trim().toLowerCase()
+    e => formatEstate(e).toLowerCase() === estateInput.trim().toLowerCase()
   );
 
   const handleEstateSelect = (e: Estate) => {
-    setEstateInput(e.name);
+    setEstateInput(formatEstate(e));
     setSelectedEstateSlug(e.slug);
     setShowDropdown(false);
   };
@@ -124,7 +127,7 @@ export function SuggestPage({ estate }: SuggestPageProps) {
     setEstateInput(value);
     setShowDropdown(true);
     // If typing something new, clear the slug (will be created on submit)
-    const match = estates.find(e => e.name.toLowerCase() === value.trim().toLowerCase());
+    const match = estates.find(e => formatEstate(e).toLowerCase() === value.trim().toLowerCase());
     if (match) {
       setSelectedEstateSlug(match.slug);
     } else {
@@ -190,7 +193,7 @@ export function SuggestPage({ estate }: SuggestPageProps) {
       <form className="suggest-form" onSubmit={handleSubmit}>
         {/* Estate combobox */}
         <div className="suggest-field" ref={comboRef}>
-          <label htmlFor="s-estate">Community / Estate <span className="req">*</span></label>
+          <label htmlFor="s-estate">Estate, location <span className="req">*</span></label>
           <div className="combobox-wrap">
             <input
               id="s-estate"
@@ -212,7 +215,8 @@ export function SuggestPage({ estate }: SuggestPageProps) {
                     className={`combobox-option ${e.slug === selectedEstateSlug ? 'active' : ''}`}
                     onClick={() => handleEstateSelect(e)}
                   >
-                    {e.name}
+                    <span className="combobox-option-title">{e.name}</span>
+                    {e.description && <span className="combobox-option-desc">{e.description}</span>}
                   </button>
                 ))}
                 {isNewEstate && (
@@ -230,12 +234,12 @@ export function SuggestPage({ estate }: SuggestPageProps) {
 
         <div className="suggest-field">
           <label htmlFor="s-name">Name or business name <span className="req">*</span></label>
-          <input id="s-name" name="name" value={form.name} onChange={handleChange} required placeholder="e.g. Ramesh Plumbing" />
+            <input id="s-name" name="name" value={form.name} onChange={handleChange} required placeholder="e.g. John's Plumbing" />
         </div>
 
         <div className="suggest-field">
           <label htmlFor="s-phone">Phone number <span className="req">*</span></label>
-          <input id="s-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required placeholder="+91 98765 43210" />
+          <input id="s-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required placeholder="+353 87 123 4567" />
         </div>
 
         <div className="suggest-field">

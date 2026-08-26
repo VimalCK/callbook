@@ -788,6 +788,18 @@
   font-weight: var(--weight-normal);
 }
 
+.admin-filter-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-filter-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  font-weight: var(--weight-normal);
+}
+
 
 /* Custom select dropdown */
 .admin-custom-select {

@@ -1,7 +1,7 @@
 import express from 'express';
 import Database from 'better-sqlite3';
 import cors from 'cors';
-import { existsSync, copyFileSync, mkdirSync } from 'fs';
+import { existsSync, copyFileSync, mkdirSync, readdirSync, readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -70,6 +70,11 @@ db.exec(`
     status TEXT NOT NULL DEFAULT 'pending',
     submitted_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS applied_seeds (
+    name TEXT PRIMARY KEY,
+    applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Add estate_id columns if they don't exist (migration for existing DBs)
@@ -128,6 +133,31 @@ if (catCount.n === 0) {
   console.log('Database seeded with sample data.');
 }
 
+function runSqlSeeds() {
+  const seedsDir = join(__dirname, 'seeds');
+  if (!existsSync(seedsDir)) return;
+
+  const applied = new Set(db.prepare('SELECT name FROM applied_seeds').all().map(row => row.name));
+  const seedFiles = readdirSync(seedsDir)
+    .filter(name => name.endsWith('.sql'))
+    .sort((a, b) => a.localeCompare(b));
+
+  for (const name of seedFiles) {
+    if (applied.has(name)) continue;
+
+    const sql = readFileSync(join(seedsDir, name), 'utf-8').trim();
+    if (!sql) continue;
+
+    db.transaction(() => {
+      db.exec(sql);
+      db.prepare('INSERT INTO applied_seeds (name) VALUES (?)').run(name);
+    })();
+    console.log(`Applied seed: ${name}`);
+  }
+}
+
+runSqlSeeds();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -159,17 +189,31 @@ function resolveEstateId(estateName) {
   const trimmedName = estateName.trim();
   if (!trimmedName) return null;
 
+  const [namePart, ...descriptionParts] = trimmedName.split(',');
+  const name = namePart.trim();
+  const description = descriptionParts.map(part => part.trim()).filter(Boolean).join(', ');
+  if (!name) return null;
+
   const bySlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(trimmedName);
-  if (bySlug) return bySlug.id;
+  if (bySlug) {
+    if (description) db.prepare('UPDATE estates SET description = ? WHERE id = ?').run(description, bySlug.id);
+    return bySlug.id;
+  }
 
-  const byName = db.prepare('SELECT id FROM estates WHERE LOWER(name) = LOWER(?)').get(trimmedName);
-  if (byName) return byName.id;
+  const byName = db.prepare('SELECT id FROM estates WHERE LOWER(name) = LOWER(?)').get(name);
+  if (byName) {
+    if (description) db.prepare('UPDATE estates SET description = ? WHERE id = ?').run(description, byName.id);
+    return byName.id;
+  }
 
-  const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const byGeneratedSlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(slug);
-  if (byGeneratedSlug) return byGeneratedSlug.id;
+  if (byGeneratedSlug) {
+    if (description) db.prepare('UPDATE estates SET description = ? WHERE id = ?').run(description, byGeneratedSlug.id);
+    return byGeneratedSlug.id;
+  }
 
-  const result = db.prepare('INSERT INTO estates (slug, name, description) VALUES (?, ?, ?)').run(slug, trimmedName, '');
+  const result = db.prepare('INSERT INTO estates (slug, name, description) VALUES (?, ?, ?)').run(slug, name, description);
   return result.lastInsertRowid;
 }
 
@@ -322,27 +366,7 @@ app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
   const suggestion = db.prepare('SELECT * FROM suggestions WHERE id = ?').get(req.params.id);
   if (!suggestion) return res.status(404).json({ error: 'Not found' });
 
-  // Resolve estate: use estate_name to find or create the estate
-  let estateId = 1; // default fallback
-  const estateName = suggestion.estate_name;
-  if (estateName) {
-    // Check if it's a slug of an existing estate
-    const bySlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(estateName);
-    if (bySlug) {
-      estateId = bySlug.id;
-    } else {
-      // Check by name
-      const byName = db.prepare('SELECT id FROM estates WHERE LOWER(name) = LOWER(?)').get(estateName);
-      if (byName) {
-        estateId = byName.id;
-      } else {
-        // Create a new estate now
-        const slug = estateName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const result = db.prepare('INSERT INTO estates (slug, name, description) VALUES (?, ?, ?)').run(slug, estateName, '');
-        estateId = result.lastInsertRowid;
-      }
-    }
-  }
+  const estateId = resolveEstateId(suggestion.estate_name) || 1;
 
   // Parse metadata for extra fields
   const meta = suggestion.metadata ? JSON.parse(suggestion.metadata) : {};

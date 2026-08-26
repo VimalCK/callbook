@@ -135,8 +135,8 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories 
           <input name="working_hours" value={form.working_hours} onChange={onChange} placeholder="e.g. Mon–Sat, 9 AM – 6 PM" />
         </div>
         <div className="admin-field">
-          <label>Community</label>
-          <input name="estate_name" value={form.estate_name} onChange={onChange} placeholder="e.g. Ballymakenny Park" />
+          <label>Estate, location</label>
+          <input name="estate_name" value={form.estate_name} onChange={onChange} placeholder="e.g. Ballymakenny Park, Drogheda" />
         </div>
         <div className="admin-field full-width">
           <label>Description</label>
@@ -164,7 +164,7 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories 
 
 /* Custom dropdown for estate filter */
 function EstateFilterDropdown({ estates, providers, value, onChange }: {
-  estates: { id: number; slug: string; name: string }[];
+  estates: { id: number; slug: string; name: string; description: string }[];
   providers: ProviderRow[];
   value: string;
   onChange: (val: string) => void;
@@ -182,7 +182,7 @@ function EstateFilterDropdown({ estates, providers, value, onChange }: {
   }, [open]);
 
   const selectedLabel = value === 'all'
-    ? `All communities (${providers.length})`
+    ? `All estates (${providers.length})`
     : `${estates.find(e => String(e.id) === value)?.name || ''} (${providers.filter(p => p.estate_id === Number(value)).length})`;
 
   return (
@@ -197,7 +197,7 @@ function EstateFilterDropdown({ estates, providers, value, onChange }: {
             className={`admin-filter-option ${value === 'all' ? 'active' : ''}`}
             onClick={() => { onChange('all'); setOpen(false); }}
           >
-            All communities
+            All estates
             <span className="admin-filter-count">{providers.length}</span>
           </button>
           {estates.map(est => {
@@ -208,7 +208,10 @@ function EstateFilterDropdown({ estates, providers, value, onChange }: {
                 className={`admin-filter-option ${value === String(est.id) ? 'active' : ''}`}
                 onClick={() => { onChange(String(est.id)); setOpen(false); }}
               >
-                {est.name}
+                <span className="admin-filter-label">
+                  <span>{est.name}</span>
+                  {est.description && <span className="admin-filter-desc">{est.description}</span>}
+                </span>
                 <span className="admin-filter-count">{count}</span>
               </button>
             );
@@ -223,7 +226,7 @@ export function AdminPage() {
   const [providers, setProviders] = useState<ProviderRow[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
-  const [estates, setEstates] = useState<{ id: number; slug: string; name: string }[]>([]);
+  const [estates, setEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
   const [estateFilter, setEstateFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -284,6 +287,7 @@ export function AdminPage() {
         fetch('/api/estates'),
         fetch('/api/categories'),
       ]);
+      if ([pRes, sRes, eRes, cRes].some(handleUnauthorized)) return;
       if (pRes.ok) setProviders(await pRes.json());
       if (sRes.ok) setSuggestions(await sRes.json());
       if (eRes.ok) setEstates(await eRes.json());
@@ -299,6 +303,14 @@ export function AdminPage() {
   const flash = (msg: string) => {
     setMessage(msg);
     setTimeout(() => setMessage(''), 3000);
+  };
+
+  const handleUnauthorized = (res: Response) => {
+    if (res.status !== 401) return false;
+    setToken(null);
+    localStorage.removeItem('callbook_admin_token');
+    setLoginError('Session expired. Sign in again.');
+    return true;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -334,6 +346,7 @@ export function AdminPage() {
 
     const res = await fetch(url, { method, headers: authHeaders, body: JSON.stringify(payload) });
 
+    if (handleUnauthorized(res)) return;
     if (res.ok) {
       flash(editingId ? 'Provider updated' : 'Provider added');
       setShowForm(false);
@@ -346,6 +359,7 @@ export function AdminPage() {
   };
 
   const handleEdit = (p: ProviderRow) => {
+    const estate = estates.find(e => e.id === p.estate_id);
     setEditingId(p.id);
     setForm({
       name: p.name,
@@ -358,7 +372,7 @@ export function AdminPage() {
       working_hours: p.working_hours || '',
       is_verified: p.is_verified,
       services: (p.services || []).join(', '),
-      estate_name: p.estate_name || estates.find(e => e.id === p.estate_id)?.name || '',
+      estate_name: estate ? [estate.name, estate.description].filter(Boolean).join(', ') : p.estate_name || '',
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -370,6 +384,7 @@ export function AdminPage() {
       onConfirm: async () => {
         setConfirmDialog(null);
         const res = await fetch(`/api/admin/providers/${id}`, { method: 'DELETE', headers: authHeaders });
+        if (handleUnauthorized(res)) return;
         if (res.ok) { flash('Provider deleted'); fetchData(); }
       },
     });
@@ -377,6 +392,7 @@ export function AdminPage() {
 
   const handleApprove = async (id: number) => {
     const res = await fetch(`/api/admin/suggestions/${id}/approve`, { method: 'POST', headers: authHeaders });
+    if (handleUnauthorized(res)) return;
     if (res.ok) { flash('Approved and added as provider'); fetchData(); setExpandedSuggestion(null); }
   };
 
@@ -386,6 +402,7 @@ export function AdminPage() {
       onConfirm: async () => {
         setConfirmDialog(null);
         const res = await fetch(`/api/admin/suggestions/${id}`, { method: 'DELETE', headers: authHeaders });
+        if (handleUnauthorized(res)) return;
         if (res.ok) { flash('Suggestion dismissed'); fetchData(); setExpandedSuggestion(null); }
       },
     });
@@ -394,6 +411,7 @@ export function AdminPage() {
   const handleEditSuggestion = (s: SuggestionRow) => {
     setEditingSuggestion(s.id);
     const meta = s.metadata ? JSON.parse(s.metadata) : {};
+    const estate = estates.find(e => e.slug === s.estate_name || e.name === s.estate_name);
     setSuggestionForm({
       name: s.name,
       business_name: meta.business_name || '',
@@ -405,8 +423,14 @@ export function AdminPage() {
       working_hours: meta.working_hours || '',
       is_verified: meta.is_verified || false,
       services: meta.services || '',
-      estate_name: s.estate_name || '',
+      estate_name: estate ? [estate.name, estate.description].filter(Boolean).join(', ') : s.estate_name || '',
     });
+  };
+
+  const formatSuggestionEstate = (estateName: string | null) => {
+    if (!estateName) return '';
+    const estate = estates.find(e => e.slug === estateName || e.name === estateName);
+    return estate ? [estate.name, estate.description].filter(Boolean).join(', ') : estateName;
   };
 
   const handleSaveSuggestion = async (e: React.FormEvent) => {
@@ -429,6 +453,7 @@ export function AdminPage() {
         is_verified: suggestionForm.is_verified || false,
       }),
     });
+    if (handleUnauthorized(res)) return;
     if (res.ok) {
       flash('Suggestion updated');
       setEditingSuggestion(null);
@@ -649,8 +674,8 @@ export function AdminPage() {
                             <div className="admin-detail-item">
                               <Home size={14} />
                               <div>
-                                <span className="admin-detail-label">Community</span>
-                                <span className="admin-detail-value">{s.estate_name}</span>
+                                <span className="admin-detail-label">Estate, location</span>
+                                <span className="admin-detail-value">{formatSuggestionEstate(s.estate_name)}</span>
                               </div>
                             </div>
                           )}

@@ -1,12 +1,12 @@
 import { useRef, useState, useCallback } from 'react';
 import {
   Wrench, Zap, Hammer, Paintbrush, SprayCan,
-  Flower2, Settings, Bug, Car, MoreHorizontal
+  Flower2, Settings, Bug, Car, Tag
 } from 'lucide-react';
 import type { Category } from '../types/provider';
 import './CategoryGrid.css';
 
-const defaultIcon = <MoreHorizontal size={16} />;
+const defaultIcon = <Tag size={16} />;
 
 const categoryIcons: Record<string, React.ReactNode> = {
   'plumber': <Wrench size={16} />,
@@ -18,7 +18,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'appliance-repair': <Settings size={16} />,
   'pest-control': <Bug size={16} />,
   'mechanic': <Car size={16} />,
-  'other': <MoreHorizontal size={16} />,
+  'other': <Tag size={16} />,
 };
 
 interface CategoryGridProps {

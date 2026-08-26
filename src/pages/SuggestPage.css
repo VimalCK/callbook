@@ -205,13 +205,24 @@
 }
 
 .combobox-option {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   width: 100%;
   padding: var(--sp-3) var(--sp-4);
   text-align: left;
   font-size: var(--text-md);
   color: var(--color-text-primary);
   transition: background var(--duration-fast);
+}
+
+.combobox-option-title {
+  color: var(--color-text-primary);
+}
+
+.combobox-option-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
 }
 
 .combobox-option:hover {

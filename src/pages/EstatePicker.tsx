@@ -73,7 +73,11 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
               <div className="estate-card-info">
                 <div className="estate-card-name">{estate.name}</div>
                 {estate.description && (
-                  <div className="estate-card-desc">{estate.description}</div>
+                  <div className="estate-card-desc">
+                    {estate.description.split(',').map(part => part.trim()).filter(Boolean).map(part => (
+                      <span key={part}>{part}</span>
+                    ))}
+                  </div>
                 )}
               </div>
               <ChevronRight size={18} className="estate-card-arrow" />
