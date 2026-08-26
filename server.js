@@ -133,7 +133,11 @@ app.use(cors());
 app.use(express.json());
 
 // Admin password
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '@Apache3749';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_PASSWORD) {
+  throw new Error('ADMIN_PASSWORD environment variable is required');
+}
 
 function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'];
