@@ -125,7 +125,7 @@
 .provider-feed {
   display: flex;
   flex-direction: column;
-  background: var(--color-surface-2);
+  background: var(--color-bg);
   border-radius: var(--radius-lg);
 }
 

@@ -10,13 +10,13 @@
   --color-primary-border: rgba(0, 168, 132, 0.3);
 
   /* Header — WhatsApp dark header */
-  --color-header: #1f2c34;
+  --color-header: #0b141a;
   --color-header-text: #e9edef;
   --color-header-icon: rgba(233, 237, 239, 0.75);
 
   /* Surfaces — WhatsApp dark theme */
-  --color-bg: #111b21;
-  --color-surface-1: #111b21;
+  --color-bg: #0b141a;
+  --color-surface-1: #0b141a;
   --color-surface-2: #1f2c34;
   --color-surface-3: #233138;
   --color-chat-bg: #0b141a;
