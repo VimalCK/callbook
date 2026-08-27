@@ -8,6 +8,8 @@ import { dirname, join } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3001;
+const ADMIN_NOTIFY_EMAIL = 'vimalchakkarakottungal@gmail.com';
+const FROM_EMAIL = 'onboarding@resend.dev';
 
 // Database setup
 const bundledDbPath = join(__dirname, 'lokall.db');
@@ -273,8 +275,50 @@ app.get('/api/categories', (req, res) => {
   res.json(cats.map(cat => ({ ...cat, provider_count: countMap[cat.id] || 0 })));
 });
 
+async function notifySuggestionSubmitted(suggestion) {
+  if (!process.env.RESEND_API_KEY) return;
+
+  const escapeHtml = (value) => String(value || '-')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: ADMIN_NOTIFY_EMAIL,
+        subject: `New Callbook suggestion: ${suggestion.name}`,
+        html: `
+        <h2>New contact suggestion</h2>
+        <p><strong>Estate, location:</strong> ${escapeHtml(suggestion.estate)}</p>
+        <p><strong>Name:</strong> ${escapeHtml(suggestion.name)}</p>
+        <p><strong>Phone:</strong> ${escapeHtml(suggestion.phone)}</p>
+        <p><strong>Category:</strong> ${escapeHtml(suggestion.category)}</p>
+        <p><strong>Service area:</strong> ${escapeHtml(suggestion.service_area)}</p>
+        <p><strong>Notes:</strong> ${escapeHtml(suggestion.note)}</p>
+        <p>Open the Callbook admin page to review and approve it.</p>
+      `,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to send suggestion notification:', await response.text());
+    }
+  } catch (err) {
+    console.error('Failed to send suggestion notification:', err);
+  }
+}
+
 // Suggestions — store estate_name as text (estate may not exist yet)
-app.post('/api/suggestions', (req, res) => {
+app.post('/api/suggestions', async (req, res) => {
   const { name, phone, category, service_area, note, estate } = req.body;
   if (!name || !phone || !category) {
     return res.status(400).json({ error: 'name, phone, and category are required' });
@@ -283,6 +327,7 @@ app.post('/api/suggestions', (req, res) => {
   const result = db.prepare(
     'INSERT INTO suggestions (estate_id, name, phone, category, service_area, note, estate_name) VALUES (?, ?, ?, ?, ?, ?, ?)'
   ).run(0, name, phone, category, service_area || null, note || null, estate || null);
+  await notifySuggestionSubmitted({ name, phone, category, service_area, note, estate });
   res.status(201).json({ id: result.lastInsertRowid, status: 'pending' });
 });
 
