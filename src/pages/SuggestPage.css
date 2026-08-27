@@ -7,7 +7,8 @@
 }
 
 .suggest-header {
-  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  padding: var(--sp-5) var(--sp-4) var(--sp-3);
+  margin-top: var(--sp-3);
   margin-bottom: 0;
   box-shadow: inset 0 -0.5px 0 var(--color-divider);
 }
@@ -30,6 +31,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  padding-bottom: 72px;
 }
 
 .suggest-honeypot {
@@ -46,6 +48,17 @@
   flex-direction: column;
   gap: 3px;
   padding: var(--sp-3) var(--sp-4);
+}
+
+.suggest-field-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.suggest-field-row .suggest-field {
+  padding: 0;
 }
 
 .suggest-field label {
@@ -71,6 +84,12 @@
   font-size: var(--text-md);
   outline: none;
   transition: color var(--duration-fast);
+}
+
+@media (max-width: 360px) {
+  .suggest-field-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .suggest-field textarea {

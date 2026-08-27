@@ -83,6 +83,20 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
               <ChevronRight size={18} className="estate-card-arrow" />
             </button>
           ))}
+          {onSuggest && (
+            <button className="estate-card estate-card-suggest" onClick={onSuggest}>
+              <div className="estate-card-avatar estate-card-avatar-suggest">
+                <PlusCircle size={20} />
+              </div>
+              <div className="estate-card-info">
+                <div className="estate-card-name">Can't find your estate?</div>
+                <div className="estate-card-desc">
+                  <span>Suggest a contact for a new estate or location</span>
+                </div>
+              </div>
+              <ChevronRight size={18} className="estate-card-arrow" />
+            </button>
+          )}
         </div>
       )}
 

@@ -156,6 +156,7 @@ export default function App() {
           <main id="main-content">
             <SuggestPage estate="" />
           </main>
+          <BottomNav active="suggest" onChange={(t) => { if (t === 'home') setTab('home'); }} />
         </div>
       );
     }
