@@ -511,18 +511,18 @@ export function AdminPage() {
       {/* Tabs */}
       <div className="admin-tab-bar">
         <button className={`admin-tab ${tab === 'providers' ? 'active' : ''}`} onClick={() => switchTab('providers')}>
-          <Users size={15} />
-          Providers
+          <Users size={20} strokeWidth={tab === 'providers' ? 2.2 : 1.8} />
+          <span>Providers</span>
           <span className="admin-tab-badge">{providers.length}</span>
         </button>
         <button className={`admin-tab ${tab === 'suggestions' ? 'active' : ''}`} onClick={() => switchTab('suggestions')}>
-          <Inbox size={15} />
-          Suggestions
+          <Inbox size={20} strokeWidth={tab === 'suggestions' ? 2.2 : 1.8} />
+          <span>Suggestions</span>
           {pendingSuggestions.length > 0 && <span className="admin-tab-badge">{pendingSuggestions.length}</span>}
         </button>
         <button className={`admin-tab ${tab === 'categories' ? 'active' : ''}`} onClick={() => switchTab('categories')}>
-          <Tag size={15} />
-          Categories
+          <Tag size={20} strokeWidth={tab === 'categories' ? 2.2 : 1.8} />
+          <span>Categories</span>
           <span className="admin-tab-badge">{categories.length}</span>
         </button>
       </div>
