@@ -77,7 +77,7 @@
 
 /* Estate list */
 .estate-list {
-  flex: 1;
+  flex: 0 0 auto;
   margin: var(--sp-4);
   padding: 0;
   display: flex;
@@ -88,8 +88,10 @@
 }
 
 .estate-list-scrollable {
+  flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  max-height: 352px;
+  overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   margin: var(--sp-3) var(--sp-4);
   padding: 0;
@@ -133,7 +135,8 @@
 
 .estate-suggest-dock {
   flex-shrink: 0;
-  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  padding: 0 var(--sp-4) var(--sp-4);
+  margin-top: var(--sp-3);
 }
 
 .estate-suggest-dock .estate-card-suggest {
