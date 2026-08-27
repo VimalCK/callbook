@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, MoreVertical, WifiOff, RefreshCw, LogOut } from 'lucide-react';
+import { Search, MoreVertical, WifiOff } from 'lucide-react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import './Header.css';
 
@@ -9,13 +9,14 @@ interface HeaderProps {
   activeTab?: Tab;
   onTabChange?: (tab: Tab) => void;
   onSearchToggle?: () => void;
+  onAbout?: () => void;
   onSwitchEstate?: () => void;
   onLogout?: () => void;
   showTabs?: boolean;
   estateName?: string;
 }
 
-export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwitchEstate, onLogout, showTabs = true, estateName }: HeaderProps) {
+export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onAbout, onSwitchEstate, onLogout, showTabs = true, estateName }: HeaderProps) {
   const isOnline = useOnlineStatus();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -31,7 +32,7 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwit
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
 
-  const hasMenuItems = onSwitchEstate || onLogout;
+  const hasMenuItems = onAbout || onSwitchEstate || onLogout;
 
   return (
     <header className="header">
@@ -59,15 +60,18 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwit
               </button>
               {menuOpen && (
                 <div className="header-menu" role="menu">
+                  {onAbout && (
+                    <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onAbout(); }}>
+                      <span>About</span>
+                    </button>
+                  )}
                   {onSwitchEstate && (
                     <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onSwitchEstate(); }}>
-                      <RefreshCw size={15} />
                       <span>Change Estate</span>
                     </button>
                   )}
                   {onLogout && (
                     <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onLogout(); }}>
-                      <LogOut size={15} />
                       <span>Logout</span>
                     </button>
                   )}
@@ -92,13 +96,6 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onSwit
             aria-current={activeTab === 'suggest' ? 'page' : undefined}
           >
             Suggest
-          </button>
-          <button
-            className={`header-tab ${activeTab === 'about' ? 'active' : ''}`}
-            onClick={() => onTabChange('about')}
-            aria-current={activeTab === 'about' ? 'page' : undefined}
-          >
-            About
           </button>
         </nav>
       )}

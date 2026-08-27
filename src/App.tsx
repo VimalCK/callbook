@@ -182,7 +182,7 @@ export default function App() {
     <div className="app">
       {approvalBanner}
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <Header activeTab={tab} onTabChange={handleTabChange} onSwitchEstate={handleSwitchEstate} showTabs={true} estateName={estateName} />
+      <Header activeTab={tab} onTabChange={handleTabChange} onAbout={() => handleTabChange('about')} onSwitchEstate={handleSwitchEstate} showTabs={true} estateName={estateName} />
       <main id="main-content">
         {tab === 'home' && (
           <HomePage
