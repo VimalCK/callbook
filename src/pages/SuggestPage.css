@@ -103,6 +103,9 @@
 }
 
 .suggest-submit-btn {
+  position: sticky;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: calc(var(--z-nav) - 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -112,6 +115,7 @@
   background: var(--color-primary);
   color: var(--color-text-inverse);
   border-radius: var(--radius-md);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   transition: background var(--duration-fast);
