@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ChevronRight, PlusCircle } from 'lucide-react';
+import { MapPin, ChevronRight, PlusCircle, Search } from 'lucide-react';
 import './EstatePicker.css';
 
 interface Estate {
@@ -18,6 +18,7 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
   const [estates, setEstates] = useState<Estate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadEstates = () => {
     setIsLoading(true);
@@ -38,8 +39,13 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
     loadEstates();
   }, []);
 
+  const hasManyEstates = estates.length > 4;
+  const filteredEstates = hasManyEstates && searchTerm.trim()
+    ? estates.filter(estate => `${estate.name} ${estate.description}`.toLowerCase().includes(searchTerm.trim().toLowerCase()))
+    : estates;
+
   return (
-    <div className="estate-picker">
+    <div className={`estate-picker ${hasManyEstates ? 'estate-picker-scroll-mode' : ''}`}>
       <div className="estate-picker-header">
         <div className="estate-picker-icon">
           <MapPin size={28} />
@@ -60,8 +66,23 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
       )}
 
       {!isLoading && !error && estates.length > 0 && (
-        <div className="estate-list">
-          {estates.map(estate => (
+        <>
+          {hasManyEstates && (
+            <div className="estate-search-section">
+              <div className="estate-search-box">
+                <Search size={17} />
+                <input
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="Search estate or location"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className={`estate-list ${hasManyEstates ? 'estate-list-scrollable' : ''}`}>
+          {filteredEstates.map(estate => (
             <button
               key={estate.id}
               className="estate-card"
@@ -83,7 +104,13 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
               <ChevronRight size={18} className="estate-card-arrow" />
             </button>
           ))}
-          {onSuggest && (
+          {filteredEstates.length === 0 && (
+            <div className="estate-no-results">
+              <p>No estate found</p>
+              <span>Try another estate or suggest a new one.</span>
+            </div>
+          )}
+          {onSuggest && !hasManyEstates && (
             <button className="estate-card estate-card-suggest" onClick={onSuggest}>
               <div className="estate-card-avatar estate-card-avatar-suggest">
                 <PlusCircle size={20} />
@@ -98,6 +125,23 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
             </button>
           )}
         </div>
+          {onSuggest && hasManyEstates && (
+            <div className="estate-suggest-dock">
+              <button className="estate-card estate-card-suggest" onClick={onSuggest}>
+                <div className="estate-card-avatar estate-card-avatar-suggest">
+                  <PlusCircle size={20} />
+                </div>
+                <div className="estate-card-info">
+                  <div className="estate-card-name">Can't find your estate?</div>
+                  <div className="estate-card-desc">
+                    <span>Suggest a contact for a new estate or location</span>
+                  </div>
+                </div>
+                <ChevronRight size={18} className="estate-card-arrow" />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {!isLoading && !error && estates.length === 0 && (
