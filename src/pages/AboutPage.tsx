@@ -1,6 +1,9 @@
 import { MapPin, Phone, MessageCircle, Shield, RefreshCw } from 'lucide-react';
 import './AboutPage.css';
 
+declare const __APP_VERSION__: string;
+declare const __APP_COMMIT__: string;
+
 interface AboutPageProps {
   onSwitchEstate: () => void;
 }
@@ -13,14 +16,14 @@ export function AboutPage({ onSwitchEstate }: AboutPageProps) {
           <MapPin size={28} />
         </div>
         <h2>Callbook</h2>
-        <p className="about-sub">Your community's trusted service directory</p>
-        <span className="about-version">Version 1.0</span>
+        <p className="about-sub">Your estate's trusted service directory</p>
+        <span className="about-version">Version {__APP_VERSION__} ({__APP_COMMIT__})</span>
       </div>
 
       <div className="about-card">
         <h3>About</h3>
         <p>
-          A simple directory of trusted local service providers for your residential community.
+          A simple directory of trusted local service providers for your residential estate.
           Find plumbers, electricians, cleaners, and more — recommended by your neighbors.
         </p>
       </div>
@@ -69,16 +72,16 @@ export function AboutPage({ onSwitchEstate }: AboutPageProps) {
       </div>
 
       <div className="about-card">
-        <h3>Community</h3>
-        <p style={{ marginBottom: '12px' }}>Switch to a different community's directory.</p>
+        <h3>Estate</h3>
+        <p style={{ marginBottom: '12px' }}>Switch to a different estate's directory.</p>
         <button className="about-switch-btn" onClick={onSwitchEstate}>
           <RefreshCw size={14} />
-          <span>Switch community</span>
+          <span>Switch Estate</span>
         </button>
       </div>
 
       <footer className="about-footer">
-        <p>Made for the community</p>
+        <p>Made for the estate</p>
       </footer>
     </div>
   );
