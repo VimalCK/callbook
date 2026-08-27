@@ -32,6 +32,15 @@
   gap: 0;
 }
 
+.suggest-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .suggest-field {
   display: flex;
   flex-direction: column;

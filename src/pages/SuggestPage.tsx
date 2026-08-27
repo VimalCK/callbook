@@ -61,6 +61,7 @@ function CategoryDropdown({ value, onChange, categories }: { value: string; onCh
 
 export function SuggestPage({ estate }: SuggestPageProps) {
   const [form, setForm] = useState({ name: '', phone: '', category: '', service_area: '', note: '' });
+  const [website, setWebsite] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -155,7 +156,7 @@ export function SuggestPage({ estate }: SuggestPageProps) {
       const res = await fetch('/api/suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, estate: estateInput.trim() }),
+        body: JSON.stringify({ ...form, estate: estateInput.trim(), website }),
       });
 
       if (res.ok) {
@@ -196,6 +197,16 @@ export function SuggestPage({ estate }: SuggestPageProps) {
       </div>
 
       <form className="suggest-form" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="website"
+          className="suggest-honeypot"
+          value={website}
+          onChange={e => setWebsite(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+        />
         {/* Estate combobox */}
         <div className="suggest-field" ref={comboRef}>
           <label htmlFor="s-estate">Select an existing estate or enter a new estate, location <span className="req">*</span></label>

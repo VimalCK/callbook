@@ -10,6 +10,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const ADMIN_NOTIFY_EMAIL = 'vimalchakkarakottungal@gmail.com';
 const FROM_EMAIL = 'onboarding@resend.dev';
+const SUGGESTION_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const SUGGESTION_RATE_LIMIT_MAX = 5;
+const suggestionRateLimits = new Map();
 
 // Database setup
 const bundledDbPath = join(__dirname, 'lokall.db');
@@ -168,6 +171,39 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+function getClientIp(req) {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  return req.ip || req.socket.remoteAddress || 'unknown';
+}
+
+function checkSuggestionRateLimit(req) {
+  const now = Date.now();
+  const ip = getClientIp(req);
+  const entry = suggestionRateLimits.get(ip);
+  if (!entry || now >= entry.resetAt) {
+    suggestionRateLimits.set(ip, { count: 1, resetAt: now + SUGGESTION_RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+  if (entry.count >= SUGGESTION_RATE_LIMIT_MAX) {
+    return { allowed: false, retryAfterSeconds: Math.ceil((entry.resetAt - now) / 1000) };
+  }
+  entry.count += 1;
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
+function cleanText(value, maxLength) {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, maxLength);
+}
+
+function hasInvalidText(value, maxLength) {
+  if (value == null) return false;
+  return typeof value !== 'string' || value.length > maxLength || /[\u0000-\u001f\u007f]/.test(value);
+}
+
 // Admin password
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
@@ -323,9 +359,35 @@ async function notifySuggestionSubmitted(suggestion) {
 
 // Suggestions — store estate_name as text (estate may not exist yet)
 app.post('/api/suggestions', async (req, res) => {
-  const { name, phone, category, service_area, note, estate } = req.body;
+  const rateLimit = checkSuggestionRateLimit(req);
+  if (!rateLimit.allowed) {
+    res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: 'Too many suggestions. Please try again later.' });
+  }
+
+  if (cleanText(req.body.website, 200)) {
+    return res.status(400).json({ error: 'Invalid submission' });
+  }
+
+  const name = cleanText(req.body.name, 100);
+  const phone = cleanText(req.body.phone, 30);
+  const category = cleanText(req.body.category, 50);
+  const service_area = cleanText(req.body.service_area, 120);
+  const note = cleanText(req.body.note, 500);
+  const estate = cleanText(req.body.estate, 140);
+
   if (!name || !phone || !category) {
     return res.status(400).json({ error: 'name, phone, and category are required' });
+  }
+  if (
+    hasInvalidText(req.body.name, 100) ||
+    hasInvalidText(req.body.phone, 30) ||
+    hasInvalidText(req.body.category, 50) ||
+    hasInvalidText(req.body.service_area, 120) ||
+    hasInvalidText(req.body.note, 500) ||
+    hasInvalidText(req.body.estate, 140)
+  ) {
+    return res.status(400).json({ error: 'Some fields are too long or contain invalid characters.' });
   }
   // Store the estate slug/name as text — don't resolve to estate_id yet
   const result = db.prepare(
