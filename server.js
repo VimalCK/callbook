@@ -163,6 +163,10 @@ runSqlSeeds();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
 
 // Admin password
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -522,11 +526,19 @@ if (isDev) {
   });
   app.use(vite.middlewares);
 } else {
-  app.use(express.static(join(__dirname, 'dist')));
+  app.use(express.static(join(__dirname, 'dist'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-store');
+      }
+    },
+  }));
   app.get('/', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
     res.sendFile(join(__dirname, 'dist', 'index.html'));
   });
   app.get('/{*path}', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
     res.sendFile(join(__dirname, 'dist', 'index.html'));
   });
 }
