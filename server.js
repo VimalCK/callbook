@@ -344,6 +344,24 @@ app.get('/api/suggestions', (req, res) => {
   res.json(rows);
 });
 
+app.get('/api/suggestions/status', (req, res) => {
+  const ids = String(req.query.ids || '')
+    .split(',')
+    .map(id => Number(id.trim()))
+    .filter(Number.isInteger);
+
+  if (ids.length === 0) return res.json([]);
+
+  const placeholders = ids.map(() => '?').join(',');
+  const rows = db.prepare(`
+    SELECT id, name, estate_name, status
+    FROM suggestions
+    WHERE id IN (${placeholders})
+  `).all(...ids);
+
+  res.json(rows);
+});
+
 // Admin
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;

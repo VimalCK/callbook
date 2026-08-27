@@ -7,8 +7,22 @@ import { AboutPage } from './pages/AboutPage';
 import { AdminPage } from './pages/AdminPage';
 import { EstatePicker } from './pages/EstatePicker';
 import { useProviders } from './hooks/useProviders';
-import { addRecentlyViewed, getSelectedEstate, setSelectedEstate, clearSelectedEstate } from './utils/storage';
+import {
+  addRecentlyViewed,
+  getSelectedEstate,
+  setSelectedEstate,
+  clearSelectedEstate,
+  getSubmittedSuggestionIds,
+  removeSubmittedSuggestionIds,
+} from './utils/storage';
 import type { Provider } from './types/provider';
+
+interface SuggestionStatus {
+  id: number;
+  name: string;
+  estate_name: string | null;
+  status: string;
+}
 
 type Tab = 'home' | 'suggest' | 'about' | 'admin';
 
@@ -17,7 +31,48 @@ export default function App() {
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [estate, setEstate] = useState<string | null>(getSelectedEstate());
   const [estateName, setEstateName] = useState<string>('');
+  const [approvedSuggestions, setApprovedSuggestions] = useState<SuggestionStatus[]>([]);
   const { providers, categories, isLoading, error, refetch } = useProviders(estate);
+
+  useEffect(() => {
+    const ids = getSubmittedSuggestionIds();
+    if (ids.length === 0) return;
+
+    fetch(`/api/suggestions/status?ids=${ids.join(',')}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((statuses: SuggestionStatus[]) => {
+        const existingIds = new Set(statuses.map(item => item.id));
+        const missingIds = ids.filter(id => !existingIds.has(id));
+        if (missingIds.length > 0) removeSubmittedSuggestionIds(missingIds);
+
+        const approved = statuses.filter(item => item.status === 'approved');
+        if (approved.length > 0) setApprovedSuggestions(approved);
+      })
+      .catch(() => {});
+  }, []);
+
+  const dismissApprovedSuggestion = () => {
+    removeSubmittedSuggestionIds(approvedSuggestions.map(item => item.id));
+    setApprovedSuggestions([]);
+  };
+
+  const approvedNames = approvedSuggestions.map(item => item.name);
+  const approvalTitle = approvedSuggestions.length === 1
+    ? 'Your suggestion was approved'
+    : `${approvedSuggestions.length} of your suggestions were approved`;
+  const approvalMessage = approvedSuggestions.length === 1
+    ? `${approvedNames[0]} is now listed in Callbook.`
+    : `${approvedNames.slice(0, 2).join(', ')}${approvedNames.length > 2 ? `, and ${approvedNames.length - 2} more` : ''} are now listed in Callbook.`;
+
+  const approvalBanner = approvedSuggestions.length > 0 && (
+    <div className="approval-banner" role="status">
+      <div>
+        <strong>{approvalTitle}</strong>
+        <span>{approvalMessage}</span>
+      </div>
+      <button type="button" onClick={dismissApprovedSuggestion}>OK</button>
+    </div>
+  );
 
   // Fetch estate display name
   useEffect(() => {
@@ -93,6 +148,7 @@ export default function App() {
     if (tab === 'suggest') {
       return (
         <div className="app">
+          {approvalBanner}
           <Header activeTab="suggest" onTabChange={(t) => { if (t === 'home') setTab('home'); }} showTabs={false} />
           <main id="main-content">
             <SuggestPage estate="" />
@@ -102,6 +158,7 @@ export default function App() {
     }
     return (
       <div className="app">
+        {approvalBanner}
         <main id="main-content">
           <EstatePicker onSelect={handleSelectEstate} onSuggest={() => setTab('suggest')} />
         </main>
@@ -113,6 +170,7 @@ export default function App() {
   if (selectedProvider) {
     return (
       <div className="app">
+        {approvalBanner}
         <main id="main-content">
           <ProviderDetail provider={selectedProvider} onBack={handleBack} />
         </main>
@@ -122,6 +180,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {approvalBanner}
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <Header activeTab={tab} onTabChange={handleTabChange} onSwitchEstate={handleSwitchEstate} showTabs={true} estateName={estateName} />
       <main id="main-content">

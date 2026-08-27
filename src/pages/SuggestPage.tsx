@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, CheckCircle, ChevronDown } from 'lucide-react';
+import { addSubmittedSuggestionId } from '../utils/storage';
 import './SuggestPage.css';
 
 interface CategoryItem {
@@ -158,6 +159,8 @@ export function SuggestPage({ estate }: SuggestPageProps) {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        if (Number.isInteger(data.id)) addSubmittedSuggestionId(data.id);
         setSubmitted(true);
         setForm({ name: '', phone: '', category: categories[0]?.id || '', service_area: '', note: '' });
       } else {
