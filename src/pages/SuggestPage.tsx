@@ -66,12 +66,8 @@ export function SuggestPage({ estate }: SuggestPageProps) {
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<CategoryItem[]>([]);
 
-  // Estate combobox state
-  const [estates, setEstates] = useState<Estate[]>([]);
+  // Estate textbox state
   const [estateInput, setEstateInput] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedEstateSlug, setSelectedEstateSlug] = useState(estate);
-  const comboRef = useRef<HTMLDivElement>(null);
 
   const formatEstate = (e: Estate) => [e.name, e.description].filter(Boolean).join(', ');
 
@@ -89,55 +85,20 @@ export function SuggestPage({ estate }: SuggestPageProps) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetch('/api/estates')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => {
-        setEstates(data);
-        // Set initial display name from current estate
-        const current = data.find((e: Estate) => e.slug === estate);
-        if (current) setEstateInput(formatEstate(current));
-      })
-      .catch(() => {});
-  }, [estate]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  const selectedEstate = estates.find(e => e.slug === selectedEstateSlug);
-  const isShowingSelectedEstate = selectedEstate && estateInput === formatEstate(selectedEstate);
-  const filteredEstates = isShowingSelectedEstate
-    ? estates
-    : estates.filter(e => formatEstate(e).toLowerCase().includes(estateInput.toLowerCase()));
-
-  const isNewEstate = estateInput.trim() && !estates.some(
-    e => formatEstate(e).toLowerCase() === estateInput.trim().toLowerCase()
-  );
-
-  const handleEstateSelect = (e: Estate) => {
-    setEstateInput(formatEstate(e));
-    setSelectedEstateSlug(e.slug);
-    setShowDropdown(false);
-  };
-
-  const handleEstateInputChange = (value: string) => {
-    setEstateInput(value);
-    setShowDropdown(true);
-    // If typing something new, clear the slug (will be created on submit)
-    const match = estates.find(e => formatEstate(e).toLowerCase() === value.trim().toLowerCase());
-    if (match) {
-      setSelectedEstateSlug(match.slug);
-    } else {
-      setSelectedEstateSlug('');
+    if (!estate) {
+      setEstateInput('');
+      return;
     }
-  };
+
+    fetch(`/api/estates/${estate}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: Estate | null) => {
+        if (data) setEstateInput(formatEstate(data));
+      })
+      .catch(() => {
+        setEstateInput(estate);
+      });
+  }, [estate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -207,45 +168,20 @@ export function SuggestPage({ estate }: SuggestPageProps) {
           autoComplete="off"
           aria-hidden="true"
         />
-        {/* Estate combobox */}
-        <div className="suggest-field" ref={comboRef}>
-          <label htmlFor="s-estate">Select an existing estate or enter a new estate, location <span className="req">*</span></label>
-          <div className="combobox-wrap">
-            <input
-              id="s-estate"
-              type="text"
-              className="combobox-input"
-              value={estateInput}
-              onChange={e => handleEstateInputChange(e.target.value)}
-              onFocus={() => setShowDropdown(true)}
-              placeholder="Estate, location"
-              autoComplete="off"
-            />
-            <ChevronDown size={16} className="combobox-arrow" />
-            {showDropdown && (
-              <div className="combobox-dropdown">
-                {filteredEstates.map(e => (
-                  <button
-                    key={e.id}
-                    type="button"
-                    className={`combobox-option ${e.slug === selectedEstateSlug ? 'active' : ''}`}
-                    onClick={() => handleEstateSelect(e)}
-                  >
-                    <span className="combobox-option-title">{e.name}</span>
-                    {e.description && <span className="combobox-option-desc">{e.description}</span>}
-                  </button>
-                ))}
-                {isNewEstate && (
-                  <div className="combobox-new">
-                    <span>Create new:</span> <strong>{estateInput.trim()}</strong>
-                  </div>
-                )}
-                {filteredEstates.length === 0 && !isNewEstate && (
-                  <div className="combobox-empty">No communities found</div>
-                )}
-              </div>
-            )}
-          </div>
+        <div className="suggest-field">
+          <label htmlFor="s-estate">Estate, location <span className="req">*</span></label>
+          <input
+            id="s-estate"
+            name="estate"
+            type="text"
+            className="suggest-estate-input"
+            value={estateInput}
+            onChange={e => setEstateInput(e.target.value)}
+            placeholder="e.g. Ballymakenny Park, Drogheda"
+            autoComplete="off"
+            disabled={Boolean(estate)}
+            required
+          />
         </div>
 
         <div className="suggest-field-row">
