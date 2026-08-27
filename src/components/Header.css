@@ -4,7 +4,6 @@
   top: 0;
   z-index: var(--z-nav);
   background: var(--color-header);
-  box-shadow: var(--shadow-header);
 }
 
 .header-top {
@@ -28,6 +27,9 @@
 }
 
 .header-estate {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: var(--text-xs);
   font-weight: var(--weight-normal);
   color: rgba(255, 255, 255, 0.6);

@@ -3,7 +3,7 @@
   background: var(--color-bg);
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - 104px);
+  height: calc(100dvh - 120px - env(safe-area-inset-bottom));
   overflow: hidden;
 }
 

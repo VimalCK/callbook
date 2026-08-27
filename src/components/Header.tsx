@@ -45,7 +45,11 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onAbou
       <div className="header-top">
         <div className="header-brand">
           <h1 className="header-title">Callbook</h1>
-          {estateName && <span className="header-estate">{estateName}</span>}
+          {estateName && (
+            <span className="header-estate">
+              {estateName}
+            </span>
+          )}
         </div>
         <div className="header-actions">
           {onSearchToggle && (

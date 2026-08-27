@@ -1,4 +1,4 @@
-import { Home, PlusCircle, Info } from 'lucide-react';
+import { BookOpen, PlusCircle } from 'lucide-react';
 import './BottomNav.css';
 
 interface BottomNavProps {
@@ -14,8 +14,8 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
         onClick={() => onChange('home')}
         aria-current={active === 'home' ? 'page' : undefined}
       >
-        <Home size={20} strokeWidth={active === 'home' ? 2.2 : 1.8} />
-        <span>Home</span>
+        <BookOpen size={21} strokeWidth={active === 'home' ? 2.2 : 1.8} />
+        <span>Services</span>
       </button>
       <button
         className={`nav-btn ${active === 'suggest' ? 'active' : ''}`}
@@ -24,14 +24,6 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
       >
         <PlusCircle size={20} strokeWidth={active === 'suggest' ? 2.2 : 1.8} />
         <span>Suggest</span>
-      </button>
-      <button
-        className={`nav-btn ${active === 'about' ? 'active' : ''}`}
-        onClick={() => onChange('about')}
-        aria-current={active === 'about' ? 'page' : undefined}
-      >
-        <Info size={20} strokeWidth={active === 'about' ? 2.2 : 1.8} />
-        <span>About</span>
       </button>
     </nav>
   );

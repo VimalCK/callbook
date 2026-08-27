@@ -1,6 +1,6 @@
 /* WhatsApp-style search bar — no borders */
 .search-container {
-  padding: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
   background: var(--color-bg);
 }
 

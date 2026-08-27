@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
+import { BottomNav } from './components/BottomNav';
 import { ProviderDetail } from './components/ProviderDetail';
 import { HomePage } from './pages/HomePage';
 import { SuggestPage } from './pages/SuggestPage';
@@ -79,7 +80,9 @@ export default function App() {
     if (estate) {
       fetch(`/api/estates/${estate}`)
         .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data) setEstateName(data.name); })
+        .then(data => {
+          if (data) setEstateName([data.name, data.description].filter(Boolean).join(', '));
+        })
         .catch(() => {});
     } else {
       setEstateName('');
@@ -182,7 +185,7 @@ export default function App() {
     <div className="app">
       {approvalBanner}
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <Header activeTab={tab} onTabChange={handleTabChange} onAbout={() => handleTabChange('about')} onSwitchEstate={handleSwitchEstate} showTabs={true} estateName={estateName} />
+      <Header activeTab={tab} onTabChange={handleTabChange} onAbout={() => handleTabChange('about')} onSwitchEstate={handleSwitchEstate} showTabs={false} estateName={estateName} />
       <main id="main-content">
         {tab === 'home' && (
           <HomePage
@@ -197,6 +200,7 @@ export default function App() {
         {tab === 'suggest' && <SuggestPage estate={estate} />}
         {tab === 'about' && <AboutPage onSwitchEstate={handleSwitchEstate} />}
       </main>
+      <BottomNav active={tab === 'about' ? 'home' : tab} onChange={handleTabChange} />
     </div>
   );
 }
