@@ -13,6 +13,9 @@ const FROM_EMAIL = 'onboarding@resend.dev';
 const SUGGESTION_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const SUGGESTION_RATE_LIMIT_MAX = 5;
 const suggestionRateLimits = new Map();
+const FEEDBACK_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const FEEDBACK_RATE_LIMIT_MAX = 10;
+const feedbackRateLimits = new Map();
 
 // Database setup
 const bundledDbPath = join(__dirname, 'lokall.db');
@@ -74,6 +77,14 @@ db.exec(`
     note TEXT,
     status TEXT NOT NULL DEFAULT 'pending',
     submitted_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS provider_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider_id INTEGER NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS applied_seeds (
@@ -194,6 +205,21 @@ function checkSuggestionRateLimit(req) {
   return { allowed: true, retryAfterSeconds: 0 };
 }
 
+function checkRateLimit(store, req, max, windowMs) {
+  const now = Date.now();
+  const ip = getClientIp(req);
+  const entry = store.get(ip);
+  if (!entry || now >= entry.resetAt) {
+    store.set(ip, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+  if (entry.count >= max) {
+    return { allowed: false, retryAfterSeconds: Math.ceil((entry.resetAt - now) / 1000) };
+  }
+  entry.count += 1;
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
 function cleanText(value, maxLength) {
   if (typeof value !== 'string') return '';
   return value.trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, maxLength);
@@ -295,6 +321,63 @@ app.get('/api/providers/:id', (req, res) => {
   const row = db.prepare('SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found' });
   res.json({ ...row, is_verified: Boolean(row.is_verified), services: JSON.parse(row.services) });
+});
+
+app.get('/api/providers/:id/feedback', (req, res) => {
+  const provider = db.prepare('SELECT id FROM providers WHERE id = ?').get(req.params.id);
+  if (!provider) return res.status(404).json({ error: 'Provider not found' });
+
+  const summary = db.prepare(`
+    SELECT COUNT(*) AS count, ROUND(AVG(rating), 1) AS average_rating
+    FROM provider_feedback
+    WHERE provider_id = ?
+  `).get(req.params.id);
+  const items = db.prepare(`
+    SELECT id, rating, comment, created_at
+    FROM provider_feedback
+    WHERE provider_id = ?
+    ORDER BY created_at DESC, id DESC
+    LIMIT 100
+  `).all(req.params.id);
+
+  res.json({
+    count: summary.count || 0,
+    average_rating: summary.average_rating || 0,
+    items,
+  });
+});
+
+app.post('/api/providers/:id/feedback', (req, res) => {
+  const rateLimit = checkRateLimit(feedbackRateLimits, req, FEEDBACK_RATE_LIMIT_MAX, FEEDBACK_RATE_LIMIT_WINDOW_MS);
+  if (!rateLimit.allowed) {
+    res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: 'Too many feedback submissions. Please try again later.' });
+  }
+
+  if (cleanText(req.body.website, 200)) {
+    return res.status(400).json({ error: 'Invalid submission' });
+  }
+
+  const provider = db.prepare('SELECT id FROM providers WHERE id = ?').get(req.params.id);
+  if (!provider) return res.status(404).json({ error: 'Provider not found' });
+
+  const rating = Number(req.body.rating);
+  const comment = cleanText(req.body.comment, 500);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: 'Rating must be between 1 and 5.' });
+  }
+  if (!comment) {
+    return res.status(400).json({ error: 'Feedback comment is required.' });
+  }
+  if (hasInvalidText(req.body.comment, 500)) {
+    return res.status(400).json({ error: 'Feedback is too long or contains invalid characters.' });
+  }
+
+  const result = db.prepare(
+    'INSERT INTO provider_feedback (provider_id, rating, comment) VALUES (?, ?, ?)'
+  ).run(req.params.id, rating, comment || null);
+
+  res.status(201).json({ id: result.lastInsertRowid, status: 'submitted' });
 });
 
 // Categories — with counts filtered by estate
