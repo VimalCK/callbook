@@ -162,7 +162,7 @@ export default function App() {
           <main id="main-content">
             <SuggestPage estate="" onSubmitted={handleSuggestionSubmitted} />
           </main>
-          <BottomNav active="suggest" onChange={(t) => { if (t === 'home') setTab('home'); }} />
+          <BottomNav active="suggest" cancelMode onChange={(t) => { if (t === 'home') setTab('home'); }} />
         </div>
       );
     }

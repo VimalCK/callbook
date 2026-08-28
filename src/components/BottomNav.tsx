@@ -1,12 +1,13 @@
-import { BookOpen, PlusCircle, Send } from 'lucide-react';
+import { BookOpen, PlusCircle, Send, X } from 'lucide-react';
 import './BottomNav.css';
 
 interface BottomNavProps {
   active: 'home' | 'suggest' | 'about';
   onChange: (tab: 'home' | 'suggest' | 'about') => void;
+  cancelMode?: boolean;
 }
 
-export function BottomNav({ active, onChange }: BottomNavProps) {
+export function BottomNav({ active, onChange, cancelMode = false }: BottomNavProps) {
   const handleSuggestClick = () => {
     if (active !== 'suggest') {
       onChange('suggest');
@@ -24,8 +25,12 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
         onClick={() => onChange('home')}
         aria-current={active === 'home' ? 'page' : undefined}
       >
-        <BookOpen size={21} strokeWidth={active === 'home' ? 2.2 : 1.8} />
-        <span>Services</span>
+        {cancelMode ? (
+          <X size={21} strokeWidth={1.9} />
+        ) : (
+          <BookOpen size={21} strokeWidth={active === 'home' ? 2.2 : 1.8} />
+        )}
+        <span>{cancelMode ? 'Cancel' : 'Services'}</span>
       </button>
       <button
         className={`nav-btn ${active === 'suggest' ? 'active' : ''}`}
