@@ -1,24 +1,15 @@
-const CACHE_NAME = 'callbook-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-];
+const CACHE_NAME = 'estate-contacts-v2';
 
-// Install: cache static shell
+// Install: activate immediately without caching files.
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
   self.skipWaiting();
 });
 
-// Activate: clean old caches, notify clients of update
+// Activate: clear all old PWA caches, then take control.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(keys.map((key) => caches.delete(key)))
     )
   );
   self.clients.claim();
@@ -31,34 +22,8 @@ self.addEventListener('activate', (event) => {
   });
 });
 
-// Fetch: network-first for navigation, cache-first for assets
+// Fetch: always use the network. Do not cache API, pages, or assets.
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-
-  if (request.mode === 'navigate') {
-    // Network-first for pages
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match('/index.html'))
-    );
-  } else {
-    // Cache-first for assets
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        });
-      })
-    );
-  }
+  event.respondWith(fetch(request));
 });

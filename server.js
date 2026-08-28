@@ -708,9 +708,7 @@ if (isDev) {
 } else {
   app.use(express.static(join(__dirname, 'dist'), {
     setHeaders: (res, filePath) => {
-      if (filePath.endsWith('index.html')) {
-        res.setHeader('Cache-Control', 'no-store');
-      }
+      res.setHeader('Cache-Control', 'no-store');
     },
   }));
   app.get('/', (req, res) => {
