@@ -1,4 +1,4 @@
-import { BookOpen, PlusCircle } from 'lucide-react';
+import { BookOpen, PlusCircle, Send } from 'lucide-react';
 import './BottomNav.css';
 
 interface BottomNavProps {
@@ -7,6 +7,16 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ active, onChange }: BottomNavProps) {
+  const handleSuggestClick = () => {
+    if (active !== 'suggest') {
+      onChange('suggest');
+      return;
+    }
+
+    const form = document.getElementById('suggest-form') as HTMLFormElement | null;
+    form?.requestSubmit();
+  };
+
   return (
     <nav className="bottom-nav" aria-label="Main navigation">
       <button
@@ -19,11 +29,16 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
       </button>
       <button
         className={`nav-btn ${active === 'suggest' ? 'active' : ''}`}
-        onClick={() => onChange('suggest')}
+        onClick={handleSuggestClick}
+        type="button"
         aria-current={active === 'suggest' ? 'page' : undefined}
       >
-        <PlusCircle size={20} strokeWidth={active === 'suggest' ? 2.2 : 1.8} />
-        <span>Suggest Service Provider</span>
+        {active === 'suggest' ? (
+          <Send size={20} strokeWidth={2.2} />
+        ) : (
+          <PlusCircle size={20} strokeWidth={1.8} />
+        )}
+        <span>{active === 'suggest' ? 'Submit' : 'Suggest Service Provider'}</span>
       </button>
     </nav>
   );

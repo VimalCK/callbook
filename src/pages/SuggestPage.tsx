@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, CheckCircle, ChevronDown } from 'lucide-react';
+import { CheckCircle, ChevronDown } from 'lucide-react';
 import { addSubmittedSuggestionId } from '../utils/storage';
 import './SuggestPage.css';
 
@@ -146,7 +146,8 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
         setSubmitted(true);
         setForm({ name: '', business_name: '', phone: '', whatsapp: '', category: categories[0]?.id || '', service_area: '', working_hours: '', note: '', services: '', is_verified: false });
       } else {
-        setError('Could not submit. Please try again.');
+        const data = await res.json().catch(() => null);
+        setError(data?.error || 'Could not submit. Please try again.');
       }
     } catch {
       setError('No connection to server. Please try later.');
@@ -176,7 +177,7 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
         {estate ? 'Know a reliable local service provider? Share their details and help the community.' : 'If your estate is not listed, enter the estate and location below, then add a local service contact.'}
       </p>
 
-      <form className="suggest-form" onSubmit={handleSubmit}>
+      <form id="suggest-form" className="suggest-form" onSubmit={handleSubmit}>
         <input
           type="text"
           name="website"
@@ -252,16 +253,12 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
         <div className="suggest-field">
           <label className="suggest-checkbox">
             <input type="checkbox" name="is_verified" checked={form.is_verified} onChange={handleChange} />
-            <span>Verified provider</span>
+            <span>Verified service provider</span>
           </label>
         </div>
 
         {error && <p className="suggest-error">{error}</p>}
 
-        <button type="submit" className="suggest-submit-btn">
-          <Send size={16} />
-          Submit suggestion
-        </button>
       </form>
     </div>
   );
