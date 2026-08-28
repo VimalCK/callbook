@@ -23,7 +23,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
         aria-current={active === 'suggest' ? 'page' : undefined}
       >
         <PlusCircle size={20} strokeWidth={active === 'suggest' ? 2.2 : 1.8} />
-        <span>Suggest</span>
+        <span>Suggest Service Provider</span>
       </button>
     </nav>
   );
