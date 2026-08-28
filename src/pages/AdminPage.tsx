@@ -746,11 +746,7 @@ export function AdminPage() {
 
       {/* ===== CATEGORIES TAB ===== */}
       {tab === 'categories' && (
-        <div className="admin-section">
-          <div className="admin-section-header">
-            <h2>Categories</h2>
-          </div>
-
+        <div className="admin-section admin-categories-section">
           {/* Add new category form */}
           <div className="admin-cat-add" style={{ padding: '0 var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
             <div className="admin-cat-add-row">

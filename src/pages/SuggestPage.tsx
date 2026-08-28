@@ -90,11 +90,16 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
         const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
         setCategories(sorted);
         if (sorted.length > 0 && !form.category) {
-          setForm(prev => ({ ...prev, category: sorted[0].id }));
+          setForm(prev => ({ ...prev, category: sorted[0].id, services: sorted[0].description || '' }));
         }
       })
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCategoryChange = (categoryId: string) => {
+    const selected = categories.find(c => c.id === categoryId);
+    setForm(prev => ({ ...prev, category: categoryId, services: selected?.description || '' }));
+  };
 
   useEffect(() => {
     if (!estate) {
@@ -228,7 +233,7 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
           <div className="suggest-field">
             <CategoryDropdown
               value={form.category}
-              onChange={(val) => setForm(prev => ({ ...prev, category: val }))}
+              onChange={handleCategoryChange}
               categories={categories}
             />
           </div>

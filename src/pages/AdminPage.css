@@ -300,6 +300,10 @@
   overflow: hidden;
 }
 
+.admin-categories-section {
+  padding-top: var(--sp-4);
+}
+
 .admin-section-header {
   display: flex;
   align-items: center;
