@@ -66,19 +66,6 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
-  CREATE TABLE IF NOT EXISTS suggestions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    estate_id INTEGER DEFAULT 1,
-    estate_name TEXT,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    category TEXT NOT NULL,
-    service_area TEXT,
-    note TEXT,
-    status TEXT NOT NULL DEFAULT 'pending',
-    submitted_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
   CREATE TABLE IF NOT EXISTS provider_feedback (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     provider_id INTEGER NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
@@ -95,9 +82,6 @@ db.exec(`
 
 // Add estate_id columns if they don't exist (migration for existing DBs)
 try { db.exec('ALTER TABLE providers ADD COLUMN estate_id INTEGER DEFAULT 1'); } catch { /* already exists */ }
-try { db.exec('ALTER TABLE suggestions ADD COLUMN estate_id INTEGER DEFAULT 1'); } catch { /* already exists */ }
-try { db.exec('ALTER TABLE suggestions ADD COLUMN estate_name TEXT'); } catch { /* already exists */ }
-try { db.exec('ALTER TABLE suggestions ADD COLUMN metadata TEXT'); } catch { /* already exists */ }
 
 // Seed data if estates table is empty
 const estateCount = db.prepare('SELECT COUNT(*) as n FROM estates').get();
