@@ -477,6 +477,18 @@ export function AdminPage() {
     ? providers
     : providers.filter(p => p.estate_id === Number(estateFilter));
 
+  const getSelectedEstateName = () => {
+    if (estateFilter === 'all') return '';
+    const estate = estates.find(e => e.id === Number(estateFilter));
+    return estate ? [estate.name, estate.description].filter(Boolean).join(', ') : '';
+  };
+
+  const handleAddProvider = () => {
+    setShowForm(true);
+    setEditingId(null);
+    setForm({ ...EMPTY_FORM, estate_name: getSelectedEstateName() });
+  };
+
   // ===== LOGIN SCREEN =====
   if (!token) {
     return (
@@ -540,7 +552,7 @@ export function AdminPage() {
         <div className="admin-section">
           <div className="admin-section-header">
             <h2>All Service Providers</h2>
-            <button className="admin-primary-btn" onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); }}>
+            <button className="admin-primary-btn" onClick={handleAddProvider}>
               <Plus size={15} />
               Add
             </button>

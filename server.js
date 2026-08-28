@@ -281,24 +281,31 @@ function resolveEstateId(estateName) {
   const description = descriptionParts.map(part => part.trim()).filter(Boolean).join(', ');
   if (!name) return null;
 
-  const bySlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(trimmedName);
-  if (bySlug) {
-    if (description) db.prepare('UPDATE estates SET description = ? WHERE id = ?').run(description, bySlug.id);
-    return bySlug.id;
+  const slugSource = description ? `${name} ${description}` : name;
+  const slug = slugSource.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const legacySlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+  const byExactSlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(trimmedName);
+  if (byExactSlug) return byExactSlug.id;
+
+  if (description) {
+    const byNameAndLocation = db.prepare('SELECT id FROM estates WHERE LOWER(name) = LOWER(?) AND LOWER(description) = LOWER(?)').get(name, description);
+    if (byNameAndLocation) return byNameAndLocation.id;
+
+    const byGeneratedSlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(slug);
+    if (byGeneratedSlug) return byGeneratedSlug.id;
+  } else {
+    const byName = db.prepare('SELECT id FROM estates WHERE LOWER(name) = LOWER(?)').get(name);
+    if (byName) return byName.id;
   }
 
-  const byName = db.prepare('SELECT id FROM estates WHERE LOWER(name) = LOWER(?)').get(name);
-  if (byName) {
-    if (description) db.prepare('UPDATE estates SET description = ? WHERE id = ?').run(description, byName.id);
-    return byName.id;
+  if (description) {
+    const byLegacySlug = db.prepare('SELECT id FROM estates WHERE slug = ? AND LOWER(description) = LOWER(?)').get(legacySlug, description);
+    if (byLegacySlug) return byLegacySlug.id;
   }
 
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const byGeneratedSlug = db.prepare('SELECT id FROM estates WHERE slug = ?').get(slug);
-  if (byGeneratedSlug) {
-    if (description) db.prepare('UPDATE estates SET description = ? WHERE id = ?').run(description, byGeneratedSlug.id);
-    return byGeneratedSlug.id;
-  }
+  if (byGeneratedSlug) return byGeneratedSlug.id;
 
   const result = db.prepare('INSERT INTO estates (slug, name, description) VALUES (?, ?, ?)').run(slug, name, description);
   return result.lastInsertRowid;
