@@ -118,7 +118,8 @@ export default function App() {
     setSelectedEstate(slug);
     setEstate(slug);
     setTab('home');
-  }, []);
+    setTimeout(refetch, 0);
+  }, [refetch]);
 
   const handleSwitchEstate = useCallback(() => {
     clearSelectedEstate();
@@ -182,7 +183,7 @@ export default function App() {
       <div className="app">
         {approvalBanner}
         <main id="main-content">
-          <ProviderDetail provider={selectedProvider} onBack={handleBack} />
+          <ProviderDetail provider={selectedProvider} categoryName={categories.find(c => c.id === selectedProvider.category)?.name} onBack={handleBack} />
         </main>
       </div>
     );

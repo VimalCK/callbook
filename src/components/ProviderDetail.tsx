@@ -27,6 +27,7 @@ import './ProviderDetail.css';
 
 interface ProviderDetailProps {
   provider: Provider;
+  categoryName?: string;
   onBack: () => void;
 }
 
@@ -43,7 +44,7 @@ interface ProviderFeedbackSummary {
   items: ProviderFeedback[];
 }
 
-export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
+export function ProviderDetail({ provider, categoryName, onBack }: ProviderDetailProps) {
   const [toast, setToast] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ProviderFeedbackSummary>({ count: 0, average_rating: 0, items: [] });
   const [rating, setRating] = useState(0);
@@ -52,6 +53,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const displayName = provider.businessName || provider.name;
   const isPending = provider.status === 'pending';
+  const categoryLabel = categoryName || provider.category.replace(/-/g, ' ');
 
   const loadFeedback = () => {
     if (isPending) return;
@@ -135,7 +137,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
         <div className="detail-topbar-info">
           <div className="detail-topbar-name">{displayName}</div>
           <div className="detail-topbar-status">
-            {isPending ? 'Pending approval' : provider.isVerified ? 'Verified provider' : provider.category.replace('-', ' ')}
+            {isPending ? 'Pending approval' : categoryLabel}
           </div>
         </div>
         <div className="detail-topbar-actions">
@@ -166,7 +168,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
           <p className="detail-person">{provider.name}</p>
         )}
         {isPending && <span className="detail-pending-badge">Pending approval</span>}
-        <span className="detail-category-badge">{provider.category.replace('-', ' ')}</span>
+        <span className="detail-category-badge">{categoryLabel}</span>
       </div>
 
       {/* Action row — like WhatsApp contact actions */}
