@@ -308,7 +308,10 @@ function resolveEstateId(estateName) {
 
 // Estates
 app.get('/api/estates', (req, res) => {
-  const estates = db.prepare('SELECT id, slug, name, description FROM estates ORDER BY name').all();
+  const status = typeof req.query.status === 'string' ? req.query.status : '';
+  const estates = status
+    ? db.prepare('SELECT id, slug, name, description FROM estates WHERE status = ? ORDER BY name').all(status)
+    : db.prepare('SELECT id, slug, name, description FROM estates ORDER BY name').all();
   res.json(estates);
 });
 

@@ -23,7 +23,7 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
   const loadEstates = () => {
     setIsLoading(true);
     setError(false);
-    fetch('/api/estates')
+    fetch('/api/estates?status=available')
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
         setEstates(data);

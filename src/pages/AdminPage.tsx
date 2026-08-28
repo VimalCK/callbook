@@ -227,6 +227,7 @@ export function AdminPage() {
   const [suggestions, setSuggestions] = useState<SuggestionRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [estates, setEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
+  const [availableEstates, setAvailableEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
   const [estateFilter, setEstateFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -281,16 +282,18 @@ export function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [pRes, sRes, eRes, cRes] = await Promise.all([
+      const [pRes, sRes, eRes, aeRes, cRes] = await Promise.all([
         fetch('/api/providers'),
         fetch('/api/suggestions', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/estates'),
+        fetch('/api/estates?status=available'),
         fetch('/api/categories'),
       ]);
-      if ([pRes, sRes, eRes, cRes].some(handleUnauthorized)) return;
+      if ([pRes, sRes, eRes, aeRes, cRes].some(handleUnauthorized)) return;
       if (pRes.ok) setProviders(await pRes.json());
       if (sRes.ok) setSuggestions(await sRes.json());
       if (eRes.ok) setEstates(await eRes.json());
+      if (aeRes.ok) setAvailableEstates(await aeRes.json());
       if (cRes.ok) {
         const cats = await cRes.json();
         setCategories(cats.sort((a: CategoryRow, b: CategoryRow) => a.name.localeCompare(b.name)));
@@ -485,7 +488,7 @@ export function AdminPage() {
               <Lock size={24} />
             </div>
             <h1>Admin Access</h1>
-            <p>Enter the password to manage Estate Contacts providers</p>
+            <p>Enter the password to manage Estate Contacts service providers</p>
             <form onSubmit={handleLogin}>
               <input
                 type="password"
@@ -517,7 +520,7 @@ export function AdminPage() {
       <div className="admin-tab-bar">
         <button className={`admin-tab ${tab === 'providers' ? 'active' : ''}`} onClick={() => switchTab('providers')}>
           <Users size={20} strokeWidth={tab === 'providers' ? 2.2 : 1.8} />
-          <span>Providers</span>
+          <span>Service Providers</span>
           <span className="admin-tab-badge">{providers.length}</span>
         </button>
         <button className={`admin-tab ${tab === 'suggestions' ? 'active' : ''}`} onClick={() => switchTab('suggestions')}>
@@ -536,7 +539,7 @@ export function AdminPage() {
       {tab === 'providers' && (
         <div className="admin-section">
           <div className="admin-section-header">
-            <h2>All Providers</h2>
+            <h2>All Service Providers</h2>
             <button className="admin-primary-btn" onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); }}>
               <Plus size={15} />
               Add
@@ -544,9 +547,9 @@ export function AdminPage() {
           </div>
 
           {/* Estate filter */}
-          {estates.length > 0 && (
+          {availableEstates.length > 0 && (
             <EstateFilterDropdown
-              estates={estates}
+              estates={availableEstates}
               providers={providers}
               value={estateFilter}
               onChange={setEstateFilter}
@@ -599,7 +602,7 @@ export function AdminPage() {
             {filteredProviders.length === 0 && (
               <div className="admin-empty">
                 <Users size={24} />
-                <p>No providers yet</p>
+                <p>No service providers yet</p>
                 <span>Click "Add" to get started</span>
               </div>
             )}
