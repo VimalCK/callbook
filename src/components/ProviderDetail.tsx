@@ -51,8 +51,10 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
   const [website, setWebsite] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const displayName = provider.businessName || provider.name;
+  const isPending = provider.status === 'pending';
 
   const loadFeedback = () => {
+    if (isPending) return;
     fetch(`/api/providers/${provider.id}/feedback`)
       .then(r => r.ok ? r.json() : Promise.reject())
       .then((data: ProviderFeedbackSummary) => setFeedback(data))
@@ -133,7 +135,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
         <div className="detail-topbar-info">
           <div className="detail-topbar-name">{displayName}</div>
           <div className="detail-topbar-status">
-            {provider.isVerified ? 'Verified provider' : provider.category.replace('-', ' ')}
+            {isPending ? 'Pending approval' : provider.isVerified ? 'Verified provider' : provider.category.replace('-', ' ')}
           </div>
         </div>
         <div className="detail-topbar-actions">
@@ -163,6 +165,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
         {provider.businessName && provider.name !== provider.businessName && (
           <p className="detail-person">{provider.name}</p>
         )}
+        {isPending && <span className="detail-pending-badge">Pending approval</span>}
         <span className="detail-category-badge">{provider.category.replace('-', ' ')}</span>
       </div>
 
@@ -252,7 +255,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
       </div>
 
       {/* Feedback */}
-      <div className="detail-card">
+      {!isPending && <div className="detail-card">
         <div className="detail-feedback-header">
           <h2 className="detail-card-title">Feedback</h2>
           {feedback.count > 0 && (
@@ -315,7 +318,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Disclaimer */}
       <p className="detail-note">

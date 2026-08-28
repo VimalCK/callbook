@@ -13,6 +13,15 @@
   background: var(--color-surface-3);
 }
 
+.pcard-pending-row {
+  cursor: default;
+}
+
+.pcard-pending-row:hover,
+.pcard-pending-row:active {
+  background: transparent;
+}
+
 .pcard:active {
   background: var(--color-surface-3);
 }
@@ -105,6 +114,19 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;
+}
+
+.pcard-pending {
+  display: inline-flex;
+  width: fit-content;
+  margin: 1px 0 2px;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 0.5px var(--color-warning, #f0b429);
+  color: var(--color-warning, #f0b429);
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  line-height: 1.2;
 }
 
 /* Service area */

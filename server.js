@@ -315,10 +315,7 @@ function resolveEstateId(estateName) {
 
 // Estates
 app.get('/api/estates', (req, res) => {
-  const status = typeof req.query.status === 'string' ? req.query.status : '';
-  const estates = status
-    ? db.prepare('SELECT id, slug, name, description FROM estates WHERE status = ? ORDER BY name').all(status)
-    : db.prepare('SELECT id, slug, name, description FROM estates ORDER BY name').all();
+  const estates = db.prepare('SELECT id, slug, name, description FROM estates ORDER BY name').all();
   res.json(estates);
 });
 
@@ -335,11 +332,11 @@ app.get('/api/providers', (req, res) => {
   if (estateSlug) {
     const estateId = getEstateId(estateSlug);
     if (!estateId) return res.json([]);
-    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.estate_id = ? ORDER BY
+    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.estate_id = ? AND providers.status IN ('approved', 'pending') ORDER BY
       CASE WHEN COALESCE(providers.business_name, providers.name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
       LOWER(COALESCE(providers.business_name, providers.name)) ASC`).all(estateId);
   } else {
-    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id ORDER BY
+    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.status IN ('approved', 'pending') ORDER BY
       CASE WHEN COALESCE(providers.business_name, providers.name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
       LOWER(COALESCE(providers.business_name, providers.name)) ASC`).all();
   }
@@ -347,13 +344,13 @@ app.get('/api/providers', (req, res) => {
 });
 
 app.get('/api/providers/:id', (req, res) => {
-  const row = db.prepare('SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ?').get(req.params.id);
+  const row = db.prepare("SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ? AND providers.status = 'approved'").get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found' });
   res.json({ ...row, is_verified: Boolean(row.is_verified), services: JSON.parse(row.services) });
 });
 
 app.get('/api/providers/:id/feedback', (req, res) => {
-  const provider = db.prepare('SELECT id FROM providers WHERE id = ?').get(req.params.id);
+  const provider = db.prepare("SELECT id FROM providers WHERE id = ? AND status = 'approved'").get(req.params.id);
   if (!provider) return res.status(404).json({ error: 'Provider not found' });
 
   const summary = db.prepare(`
@@ -387,7 +384,7 @@ app.post('/api/providers/:id/feedback', (req, res) => {
     return res.status(400).json({ error: 'Invalid submission' });
   }
 
-  const provider = db.prepare('SELECT id FROM providers WHERE id = ?').get(req.params.id);
+  const provider = db.prepare("SELECT id FROM providers WHERE id = ? AND status = 'approved'").get(req.params.id);
   if (!provider) return res.status(404).json({ error: 'Provider not found' });
 
   const rating = Number(req.body.rating);
@@ -419,9 +416,9 @@ app.get('/api/categories', (req, res) => {
     if (!estateId) {
       return res.json(cats.map(cat => ({ ...cat, provider_count: 0 })));
     }
-    counts = db.prepare('SELECT category, COUNT(*) as count FROM providers WHERE estate_id = ? GROUP BY category').all(estateId);
+    counts = db.prepare("SELECT category, COUNT(*) as count FROM providers WHERE estate_id = ? AND status = 'approved' GROUP BY category").all(estateId);
   } else {
-    counts = db.prepare('SELECT category, COUNT(*) as count FROM providers GROUP BY category').all();
+    counts = db.prepare("SELECT category, COUNT(*) as count FROM providers WHERE status = 'approved' GROUP BY category").all();
   }
   const countMap = Object.fromEntries(counts.map(c => [c.category, c.count]));
   res.json(cats.map(cat => ({ ...cat, provider_count: countMap[cat.id] || 0 })));
@@ -469,7 +466,7 @@ async function notifySuggestionSubmitted(suggestion) {
   }
 }
 
-// Suggestions — store estate_name as text (estate may not exist yet)
+// Suggestions are stored as pending providers.
 app.post('/api/suggestions', async (req, res) => {
   const rateLimit = checkSuggestionRateLimit(req);
   if (!rateLimit.allowed) {
@@ -482,31 +479,66 @@ app.post('/api/suggestions', async (req, res) => {
   }
 
   const name = cleanText(req.body.name, 100);
+  const business_name = cleanText(req.body.business_name, 100);
   const phone = cleanText(req.body.phone, 30);
+  const whatsapp = cleanText(req.body.whatsapp, 30);
   const category = cleanText(req.body.category, 50);
   const service_area = cleanText(req.body.service_area, 120);
+  const working_hours = cleanText(req.body.working_hours, 120);
   const note = cleanText(req.body.note, 500);
+  const services = cleanText(req.body.services, 300);
   const estate = cleanText(req.body.estate, 140);
+  const is_verified = Boolean(req.body.is_verified);
 
   if (!name || !phone || !category) {
     return res.status(400).json({ error: 'name, phone, and category are required' });
   }
   if (
     hasInvalidText(req.body.name, 100) ||
+    hasInvalidText(req.body.business_name, 100) ||
     hasInvalidText(req.body.phone, 30) ||
+    hasInvalidText(req.body.whatsapp, 30) ||
     hasInvalidText(req.body.category, 50) ||
     hasInvalidText(req.body.service_area, 120) ||
+    hasInvalidText(req.body.working_hours, 120) ||
     hasInvalidText(req.body.note, 500) ||
+    hasInvalidText(req.body.services, 300) ||
     hasInvalidText(req.body.estate, 140)
   ) {
     return res.status(400).json({ error: 'Some fields are too long or contain invalid characters.' });
   }
-  // Store the estate slug/name as text — don't resolve to estate_id yet
-  const result = db.prepare(
-    'INSERT INTO suggestions (estate_id, name, phone, category, service_area, note, estate_name) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(0, name, phone, category, service_area || null, note || null, estate || null);
+  const estateId = resolveEstateId(estate);
+  if (!estateId) {
+    return res.status(400).json({ error: 'Estate, location is required.' });
+  }
+
+  const estateRow = db.prepare('SELECT id, slug, name, description FROM estates WHERE id = ?').get(estateId);
+  let result;
+  try {
+    result = db.prepare(`
+      INSERT INTO providers (estate_id, name, business_name, category, description, phone, phone_normalized, whatsapp, service_area, working_hours, is_verified, services, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+    `).run(
+      estateId,
+      name,
+      business_name || null,
+      category,
+      note || '',
+      phone,
+      normalizePhone(phone),
+      whatsapp || null,
+      service_area || null,
+      working_hours || null,
+      is_verified ? 1 : 0,
+      JSON.stringify(services ? services.split(',').map(s => s.trim()).filter(Boolean) : [])
+    );
+  } catch (err) {
+    if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
+    throw err;
+  }
+
   await notifySuggestionSubmitted({ name, phone, category, service_area, note, estate });
-  res.status(201).json({ id: result.lastInsertRowid, status: 'pending' });
+  res.status(201).json({ id: result.lastInsertRowid, status: 'pending', estate: estateRow });
 });
 
 app.get('/api/suggestions', (req, res) => {
@@ -515,11 +547,55 @@ app.get('/api/suggestions', (req, res) => {
   if (estateSlug) {
     const estateId = getEstateId(estateSlug);
     if (!estateId) return res.json([]);
-    rows = db.prepare('SELECT * FROM suggestions WHERE estate_id = ? ORDER BY submitted_at DESC').all(estateId);
+    rows = db.prepare(`
+      SELECT providers.id, providers.name, providers.phone, providers.category, providers.service_area,
+        providers.description AS note,
+        providers.business_name,
+        providers.whatsapp,
+        providers.working_hours,
+        providers.is_verified,
+        providers.services,
+        providers.status,
+        providers.created_at AS submitted_at,
+        estates.slug AS estate_slug,
+        estates.name AS estate_name,
+        estates.description AS estate_description
+      FROM providers
+      LEFT JOIN estates ON estates.id = providers.estate_id
+      WHERE providers.estate_id = ? AND providers.status = 'pending'
+      ORDER BY providers.created_at DESC
+    `).all(estateId);
   } else {
-    rows = db.prepare('SELECT * FROM suggestions ORDER BY submitted_at DESC').all();
+    rows = db.prepare(`
+      SELECT providers.id, providers.name, providers.phone, providers.category, providers.service_area,
+        providers.description AS note,
+        providers.business_name,
+        providers.whatsapp,
+        providers.working_hours,
+        providers.is_verified,
+        providers.services,
+        providers.status,
+        providers.created_at AS submitted_at,
+        estates.slug AS estate_slug,
+        estates.name AS estate_name,
+        estates.description AS estate_description
+      FROM providers
+      LEFT JOIN estates ON estates.id = providers.estate_id
+      WHERE providers.status = 'pending'
+      ORDER BY providers.created_at DESC
+    `).all();
   }
-  res.json(rows);
+  res.json(rows.map(row => ({
+    ...row,
+    metadata: JSON.stringify({
+      business_name: row.business_name,
+      whatsapp: row.whatsapp,
+      working_hours: row.working_hours,
+      is_verified: Boolean(row.is_verified),
+      services: JSON.parse(row.services || '[]').join(', '),
+    }),
+    estate_name: [row.estate_name, row.estate_description].filter(Boolean).join(', '),
+  })));
 });
 
 app.get('/api/suggestions/status', (req, res) => {
@@ -532,9 +608,11 @@ app.get('/api/suggestions/status', (req, res) => {
 
   const placeholders = ids.map(() => '?').join(',');
   const rows = db.prepare(`
-    SELECT id, name, estate_name, status
-    FROM suggestions
-    WHERE id IN (${placeholders})
+    SELECT providers.id, providers.name, providers.status,
+      trim(estates.name || CASE WHEN estates.description IS NOT NULL AND estates.description != '' THEN ', ' || estates.description ELSE '' END) AS estate_name
+    FROM providers
+    LEFT JOIN estates ON estates.id = providers.estate_id
+    WHERE providers.id IN (${placeholders})
   `).all(...ids);
 
   res.json(rows);
@@ -556,8 +634,8 @@ app.post('/api/admin/providers', requireAdmin, (req, res) => {
   const estateId = resolveEstateId(estate_name) || getEstateId(estate) || 1;
   try {
     const result = db.prepare(`
-      INSERT INTO providers (estate_id, name, business_name, category, description, phone, phone_normalized, whatsapp, service_area, address, working_hours, image, is_verified, services)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO providers (estate_id, name, business_name, category, description, phone, phone_normalized, whatsapp, service_area, address, working_hours, image, is_verified, services, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
     `).run(estateId, name, business_name || null, category, description || '', phone, normalizePhone(phone), whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []));
     res.status(201).json({ id: result.lastInsertRowid });
   } catch (err) {
@@ -597,47 +675,34 @@ app.delete('/api/admin/providers/:id', requireAdmin, (req, res) => {
 });
 
 app.delete('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
-  db.prepare('DELETE FROM suggestions WHERE id = ?').run(req.params.id);
+  db.prepare("DELETE FROM providers WHERE id = ? AND status = 'pending'").run(req.params.id);
   res.json({ success: true });
 });
 
 app.put('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
   const { name, phone, category, service_area, note, estate_name, business_name, whatsapp, working_hours, services, is_verified } = req.body;
-  const existing = db.prepare('SELECT id FROM suggestions WHERE id = ?').get(req.params.id);
+  const existing = db.prepare("SELECT id, estate_id FROM providers WHERE id = ? AND status = 'pending'").get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
-  const metadata = JSON.stringify({ business_name, whatsapp, working_hours, services, is_verified });
-  db.prepare(`
-    UPDATE suggestions SET name = ?, phone = ?, category = ?, service_area = ?, note = ?, estate_name = ?, metadata = ?
-    WHERE id = ?
-  `).run(name, phone, category, service_area || null, note || null, estate_name || null, metadata, req.params.id);
-  res.json({ success: true });
+  const estateId = resolveEstateId(estate_name) || existing.estate_id;
+  try {
+    db.prepare(`
+      UPDATE providers SET estate_id = ?, name = ?, business_name = ?, category = ?, description = ?, phone = ?, phone_normalized = ?, whatsapp = ?,
+        service_area = ?, working_hours = ?, is_verified = ?, services = ?, updated_at = datetime('now')
+      WHERE id = ? AND status = 'pending'
+    `).run(estateId, name, business_name || null, category, note || '', phone, normalizePhone(phone), whatsapp || null, service_area || null, working_hours || null, is_verified ? 1 : 0, JSON.stringify(services ? services.split(',').map(s => s.trim()).filter(Boolean) : []), req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
+    throw err;
+  }
 });
 
 app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
-  const suggestion = db.prepare('SELECT * FROM suggestions WHERE id = ?').get(req.params.id);
+  const suggestion = db.prepare("SELECT providers.*, estates.name AS estate_name, estates.description AS estate_description FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ? AND providers.status = 'pending'").get(req.params.id);
   if (!suggestion) return res.status(404).json({ error: 'Not found' });
 
-  const estateId = resolveEstateId(suggestion.estate_name) || 1;
-
-  // Parse metadata for extra fields
-  const meta = suggestion.metadata ? JSON.parse(suggestion.metadata) : {};
-
   try {
-    db.prepare(`INSERT INTO providers (estate_id, name, business_name, category, phone, phone_normalized, whatsapp, service_area, working_hours, description, is_verified, services) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      estateId,
-      suggestion.name,
-      meta.business_name || null,
-      suggestion.category,
-      suggestion.phone,
-      normalizePhone(suggestion.phone),
-      meta.whatsapp || null,
-      suggestion.service_area || null,
-      meta.working_hours || null,
-      suggestion.note || '',
-      meta.is_verified ? 1 : 0,
-      JSON.stringify(meta.services ? meta.services.split(',').map(s => s.trim()).filter(Boolean) : [])
-    );
-    db.prepare("UPDATE suggestions SET status = 'approved' WHERE id = ?").run(req.params.id);
+    db.prepare("UPDATE providers SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND status = 'pending'").run(req.params.id);
     res.json({ success: true });
   } catch (err) {
     if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);

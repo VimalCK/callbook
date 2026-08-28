@@ -114,6 +114,12 @@ export default function App() {
     setEstate(slug);
   }, []);
 
+  const handleSuggestionSubmitted = useCallback((slug: string) => {
+    setSelectedEstate(slug);
+    setEstate(slug);
+    setTab('home');
+  }, []);
+
   const handleSwitchEstate = useCallback(() => {
     clearSelectedEstate();
     setEstate(null);
@@ -154,7 +160,7 @@ export default function App() {
           {approvalBanner}
           <Header activeTab="suggest" onTabChange={(t) => { if (t === 'home') setTab('home'); }} showTabs={false} />
           <main id="main-content">
-            <SuggestPage estate="" />
+            <SuggestPage estate="" onSubmitted={handleSuggestionSubmitted} />
           </main>
           <BottomNav active="suggest" onChange={(t) => { if (t === 'home') setTab('home'); }} />
         </div>
@@ -198,7 +204,7 @@ export default function App() {
             onViewProvider={handleViewProvider}
           />
         )}
-        {tab === 'suggest' && <SuggestPage estate={estate} />}
+        {tab === 'suggest' && <SuggestPage estate={estate} onSubmitted={handleSuggestionSubmitted} />}
         {tab === 'about' && <AboutPage onSwitchEstate={handleSwitchEstate} />}
       </main>
       <BottomNav active={tab === 'about' ? 'home' : tab} onChange={handleTabChange} />

@@ -113,6 +113,20 @@
   color: var(--color-text-tertiary);
 }
 
+.suggest-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.suggest-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
 .suggest-field input:-webkit-autofill,
 .suggest-field input:-webkit-autofill:hover,
 .suggest-field input:-webkit-autofill:focus,
@@ -206,6 +220,10 @@
   color: var(--color-text-secondary);
   opacity: 1;
   cursor: not-allowed;
+}
+
+.suggest-estate-input {
+  width: 100%;
 }
 
 .combobox-wrap {

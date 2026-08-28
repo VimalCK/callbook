@@ -227,7 +227,6 @@ export function AdminPage() {
   const [suggestions, setSuggestions] = useState<SuggestionRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [estates, setEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
-  const [availableEstates, setAvailableEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
   const [estateFilter, setEstateFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -282,18 +281,16 @@ export function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [pRes, sRes, eRes, aeRes, cRes] = await Promise.all([
+      const [pRes, sRes, eRes, cRes] = await Promise.all([
         fetch('/api/providers'),
         fetch('/api/suggestions', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/estates'),
-        fetch('/api/estates?status=available'),
         fetch('/api/categories'),
       ]);
-      if ([pRes, sRes, eRes, aeRes, cRes].some(handleUnauthorized)) return;
+      if ([pRes, sRes, eRes, cRes].some(handleUnauthorized)) return;
       if (pRes.ok) setProviders(await pRes.json());
       if (sRes.ok) setSuggestions(await sRes.json());
       if (eRes.ok) setEstates(await eRes.json());
-      if (aeRes.ok) setAvailableEstates(await aeRes.json());
       if (cRes.ok) {
         const cats = await cRes.json();
         setCategories(cats.sort((a: CategoryRow, b: CategoryRow) => a.name.localeCompare(b.name)));
@@ -559,9 +556,9 @@ export function AdminPage() {
           </div>
 
           {/* Estate filter */}
-          {availableEstates.length > 0 && (
+          {estates.length > 0 && (
             <EstateFilterDropdown
-              estates={availableEstates}
+              estates={estates}
               providers={providers}
               value={estateFilter}
               onChange={setEstateFilter}

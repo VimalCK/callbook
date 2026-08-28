@@ -39,6 +39,7 @@ export function useProviders(estate: string | null): UseProvidersReturn {
           workingHours: (p.working_hours as string) || undefined,
           image: (p.image as string) || undefined,
           isVerified: Boolean(p.is_verified),
+          status: (p.status as string) || 'approved',
           lastUpdated: (p.updated_at as string) || undefined,
           services: (p.services as string[]) || [],
         }));

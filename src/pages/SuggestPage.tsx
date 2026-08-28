@@ -17,6 +17,7 @@ interface Estate {
 
 interface SuggestPageProps {
   estate: string;
+  onSubmitted?: (estateSlug: string) => void;
 }
 
 /* Custom category dropdown */
@@ -59,8 +60,19 @@ function CategoryDropdown({ value, onChange, categories }: { value: string; onCh
   );
 }
 
-export function SuggestPage({ estate }: SuggestPageProps) {
-  const [form, setForm] = useState({ name: '', phone: '', category: '', service_area: '', note: '' });
+export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
+  const [form, setForm] = useState({
+    name: '',
+    business_name: '',
+    phone: '',
+    whatsapp: '',
+    category: '',
+    service_area: '',
+    working_hours: '',
+    note: '',
+    services: '',
+    is_verified: false,
+  });
   const [website, setWebsite] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -101,7 +113,11 @@ export function SuggestPage({ estate }: SuggestPageProps) {
   }, [estate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value, type } = e.target;
+    setForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,8 +139,12 @@ export function SuggestPage({ estate }: SuggestPageProps) {
       if (res.ok) {
         const data = await res.json();
         if (Number.isInteger(data.id)) addSubmittedSuggestionId(data.id);
+        if (data.estate?.slug) {
+          onSubmitted?.(data.estate.slug);
+          return;
+        }
         setSubmitted(true);
-        setForm({ name: '', phone: '', category: categories[0]?.id || '', service_area: '', note: '' });
+        setForm({ name: '', business_name: '', phone: '', whatsapp: '', category: categories[0]?.id || '', service_area: '', working_hours: '', note: '', services: '', is_verified: false });
       } else {
         setError('Could not submit. Please try again.');
       }
@@ -191,8 +211,20 @@ export function SuggestPage({ estate }: SuggestPageProps) {
           </div>
 
           <div className="suggest-field">
+            <label htmlFor="s-business">Business name</label>
+            <input id="s-business" name="business_name" value={form.business_name} onChange={handleChange} placeholder="e.g. Kumar Plumbing" />
+          </div>
+        </div>
+
+        <div className="suggest-field-row">
+          <div className="suggest-field">
             <label htmlFor="s-phone">Phone number <span className="req">*</span></label>
             <input id="s-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required placeholder="+353 87 123 4567" />
+          </div>
+
+          <div className="suggest-field">
+            <label htmlFor="s-whatsapp">WhatsApp number</label>
+            <input id="s-whatsapp" name="whatsapp" type="tel" value={form.whatsapp} onChange={handleChange} placeholder="353871234567" />
           </div>
         </div>
 
@@ -213,8 +245,25 @@ export function SuggestPage({ estate }: SuggestPageProps) {
         </div>
 
         <div className="suggest-field">
+          <label htmlFor="s-hours">Working hours</label>
+          <input id="s-hours" name="working_hours" value={form.working_hours} onChange={handleChange} placeholder="e.g. Mon-Sat, 9 AM - 6 PM" />
+        </div>
+
+        <div className="suggest-field">
           <label htmlFor="s-note">Additional notes</label>
           <textarea id="s-note" name="note" value={form.note} onChange={handleChange} rows={3} placeholder="Anything useful — specialty, timing, experience..." />
+        </div>
+
+        <div className="suggest-field">
+          <label htmlFor="s-services">Services (comma separated)</label>
+          <input id="s-services" name="services" value={form.services} onChange={handleChange} placeholder="Pipe repair, Leak fixing, Bathroom fitting" />
+        </div>
+
+        <div className="suggest-field">
+          <label className="suggest-checkbox">
+            <input type="checkbox" name="is_verified" checked={form.is_verified} onChange={handleChange} />
+            <span>Verified provider</span>
+          </label>
         </div>
 
         {error && <p className="suggest-error">{error}</p>}

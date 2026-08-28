@@ -11,6 +11,7 @@ export interface Provider {
   workingHours?: string;
   image?: string;
   isVerified?: boolean;
+  status?: 'approved' | 'pending' | string;
   lastUpdated?: string;
   services: string[];
 }
