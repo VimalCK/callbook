@@ -225,6 +225,25 @@ function cleanText(value, maxLength) {
   return value.trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, maxLength);
 }
 
+function normalizePhone(value) {
+  if (typeof value !== 'string') return '';
+  const normalized = value.replace(/[^0-9+]/g, '');
+  if (normalized.startsWith('+')) return `+${normalized.slice(1).replace(/\+/g, '')}`;
+  return normalized.replace(/\+/g, '');
+}
+
+function isContactAlreadyExistsError(error) {
+  const message = String(error?.message || '');
+  return error?.code === 'SQLITE_CONSTRAINT_UNIQUE' && (
+    message.includes('providers.estate_id, providers.phone_normalized') ||
+    message.includes('idx_providers_estate_phone_unique')
+  );
+}
+
+function sendContactAlreadyExists(res) {
+  return res.status(409).json({ error: 'Contact already exists in this estate.' });
+}
+
 function hasInvalidText(value, maxLength) {
   if (value == null) return false;
   return typeof value !== 'string' || value.length > maxLength || /[\u0000-\u001f\u007f]/.test(value);
@@ -525,11 +544,16 @@ app.post('/api/admin/providers', requireAdmin, (req, res) => {
   const { name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, services, estate, estate_name } = req.body;
   if (!name || !phone || !category) return res.status(400).json({ error: 'name, phone, and category are required' });
   const estateId = resolveEstateId(estate_name) || getEstateId(estate) || 1;
-  const result = db.prepare(`
-    INSERT INTO providers (estate_id, name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, services)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(estateId, name, business_name || null, category, description || '', phone, whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []));
-  res.status(201).json({ id: result.lastInsertRowid });
+  try {
+    const result = db.prepare(`
+      INSERT INTO providers (estate_id, name, business_name, category, description, phone, phone_normalized, whatsapp, service_area, address, working_hours, image, is_verified, services)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(estateId, name, business_name || null, category, description || '', phone, normalizePhone(phone), whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []));
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
+    throw err;
+  }
 });
 
 app.put('/api/admin/providers/:id', requireAdmin, (req, res) => {
@@ -537,12 +561,17 @@ app.put('/api/admin/providers/:id', requireAdmin, (req, res) => {
   const existing = db.prepare('SELECT id, estate_id FROM providers WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
   const estateId = resolveEstateId(estate_name) || existing.estate_id;
-  db.prepare(`
-    UPDATE providers SET estate_id = ?, name = ?, business_name = ?, category = ?, description = ?, phone = ?, whatsapp = ?,
-      service_area = ?, address = ?, working_hours = ?, image = ?, is_verified = ?, services = ?, updated_at = datetime('now')
-    WHERE id = ?
-  `).run(estateId, name, business_name || null, category, description || '', phone, whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []), req.params.id);
-  res.json({ success: true });
+  try {
+    db.prepare(`
+      UPDATE providers SET estate_id = ?, name = ?, business_name = ?, category = ?, description = ?, phone = ?, phone_normalized = ?, whatsapp = ?,
+        service_area = ?, address = ?, working_hours = ?, image = ?, is_verified = ?, services = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).run(estateId, name, business_name || null, category, description || '', phone, normalizePhone(phone), whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []), req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
+    throw err;
+  }
 });
 
 app.delete('/api/admin/providers/:id', requireAdmin, (req, res) => {
@@ -583,21 +612,27 @@ app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
   // Parse metadata for extra fields
   const meta = suggestion.metadata ? JSON.parse(suggestion.metadata) : {};
 
-  db.prepare(`INSERT INTO providers (estate_id, name, business_name, category, phone, whatsapp, service_area, working_hours, description, is_verified, services) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-    estateId,
-    suggestion.name,
-    meta.business_name || null,
-    suggestion.category,
-    suggestion.phone,
-    meta.whatsapp || null,
-    suggestion.service_area || null,
-    meta.working_hours || null,
-    suggestion.note || '',
-    meta.is_verified ? 1 : 0,
-    JSON.stringify(meta.services ? meta.services.split(',').map(s => s.trim()).filter(Boolean) : [])
-  );
-  db.prepare("UPDATE suggestions SET status = 'approved' WHERE id = ?").run(req.params.id);
-  res.json({ success: true });
+  try {
+    db.prepare(`INSERT INTO providers (estate_id, name, business_name, category, phone, phone_normalized, whatsapp, service_area, working_hours, description, is_verified, services) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      estateId,
+      suggestion.name,
+      meta.business_name || null,
+      suggestion.category,
+      suggestion.phone,
+      normalizePhone(suggestion.phone),
+      meta.whatsapp || null,
+      suggestion.service_area || null,
+      meta.working_hours || null,
+      suggestion.note || '',
+      meta.is_verified ? 1 : 0,
+      JSON.stringify(meta.services ? meta.services.split(',').map(s => s.trim()).filter(Boolean) : [])
+    );
+    db.prepare("UPDATE suggestions SET status = 'approved' WHERE id = ?").run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
+    throw err;
+  }
 });
 
 // Admin: manage categories

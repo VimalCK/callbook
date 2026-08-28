@@ -354,7 +354,8 @@ export function AdminPage() {
       setForm(EMPTY_FORM);
       fetchData();
     } else {
-      flash('Error saving. Check required fields.');
+      const data = await res.json().catch(() => null);
+      flash(data?.error || 'Error saving. Check required fields.');
     }
   };
 
@@ -394,6 +395,10 @@ export function AdminPage() {
     const res = await fetch(`/api/admin/suggestions/${id}/approve`, { method: 'POST', headers: authHeaders });
     if (handleUnauthorized(res)) return;
     if (res.ok) { flash('Approved and added as provider'); fetchData(); setExpandedSuggestion(null); }
+    else {
+      const data = await res.json().catch(() => null);
+      flash(data?.error || 'Error approving suggestion');
+    }
   };
 
   const handleDismiss = async (id: number) => {

@@ -35,9 +35,16 @@ if (!existingCats.includes('other')) {
 
 // Insert providers
 const insert = db.prepare(`
-  INSERT INTO providers (estate_id, name, business_name, category, description, phone, whatsapp, service_area, is_verified, services)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+  INSERT INTO providers (estate_id, name, business_name, category, description, phone, phone_normalized, whatsapp, service_area, is_verified, services)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
 `);
+
+function normalizePhone(value) {
+  if (typeof value !== 'string') return '';
+  const normalized = value.replace(/[^0-9+]/g, '');
+  if (normalized.startsWith('+')) return `+${normalized.slice(1).replace(/\+/g, '')}`;
+  return normalized.replace(/\+/g, '');
+}
 
 let imported = 0;
 let skipped = 0;
@@ -72,8 +79,13 @@ for (const c of contacts) {
     continue;
   }
 
-  // Check if already exists (by name)
-  const existing = db.prepare('SELECT id FROM providers WHERE name = ? AND estate_id = ?').get(name, estate.id);
+  // Check if already exists in this estate by name or normalized phone.
+  const normalizedPhone = normalizePhone(phone);
+  const existingProviders = db.prepare('SELECT id, name, phone, phone_normalized FROM providers WHERE estate_id = ?').all(estate.id);
+  const existing = existingProviders.find(provider =>
+    provider.name === name ||
+    (normalizedPhone && (provider.phone_normalized === normalizedPhone || normalizePhone(provider.phone) === normalizedPhone))
+  );
   if (existing) {
     skipped++;
     continue;
@@ -86,6 +98,7 @@ for (const c of contacts) {
     'other', // category — can be recategorized by admin later
     description,
     phone || '',
+    normalizedPhone,
     null, // whatsapp
     'Ballymakenny Park',
     '[]' // services
