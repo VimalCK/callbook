@@ -319,7 +319,7 @@ export function ProviderDetail({ provider, onBack }: ProviderDetailProps) {
 
       {/* Disclaimer */}
       <p className="detail-note">
-        Callbook is a directory only. Verify pricing and availability directly with the provider.
+        Estate Contacts is a directory only. Verify pricing and availability directly with the provider.
       </p>
 
       {/* Toast */}

@@ -480,7 +480,7 @@ export function AdminPage() {
               <Lock size={24} />
             </div>
             <h1>Admin Access</h1>
-            <p>Enter the password to manage Callbook providers</p>
+            <p>Enter the password to manage Estate Contacts providers</p>
             <form onSubmit={handleLogin}>
               <input
                 type="password"

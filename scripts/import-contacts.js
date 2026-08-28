@@ -1,5 +1,5 @@
 /**
- * Import cleaned contacts into the Callbook database.
+ * Import cleaned contacts into the Estate Contacts database.
  * Creates the "Ballymakenny Park" estate if it doesn't exist,
  * then imports all contacts as providers.
  */

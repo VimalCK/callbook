@@ -1,6 +1,6 @@
 {
-  "name": "Callbook — Local Service Directory",
-  "short_name": "Callbook",
+  "name": "Estate Contacts — Local Service Directory",
+  "short_name": "Estate Contacts",
   "description": "Find and contact trusted local service providers in your residential community",
   "start_url": "/",
   "display": "standalone",

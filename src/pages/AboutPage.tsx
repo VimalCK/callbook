@@ -15,7 +15,7 @@ export function AboutPage({ onSwitchEstate }: AboutPageProps) {
         <div className="about-icon">
           <MapPin size={28} />
         </div>
-        <h2>Callbook</h2>
+        <h2>Estate Contacts</h2>
         <p className="about-sub">Your estate's trusted service directory</p>
         <span className="about-version">Version {__APP_VERSION__} ({__APP_COMMIT__})</span>
       </div>
@@ -51,7 +51,7 @@ export function AboutPage({ onSwitchEstate }: AboutPageProps) {
         <div className="about-notice">
           <Shield size={16} />
           <p>
-            Callbook is a contact directory only. It does not handle payments, bookings, or reviews.
+            Estate Contacts is a contact directory only. It does not handle payments, bookings, or reviews.
             Always verify pricing and availability directly.
           </p>
         </div>

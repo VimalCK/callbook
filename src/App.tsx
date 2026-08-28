@@ -62,8 +62,8 @@ export default function App() {
     ? 'Your suggestion was approved'
     : `${approvedSuggestions.length} of your suggestions were approved`;
   const approvalMessage = approvedSuggestions.length === 1
-    ? `${approvedNames[0]} is now listed in Callbook.`
-    : `${approvedNames.slice(0, 2).join(', ')}${approvedNames.length > 2 ? `, and ${approvedNames.length - 2} more` : ''} are now listed in Callbook.`;
+    ? `${approvedNames[0]} is now listed in Estate Contacts.`
+    : `${approvedNames.slice(0, 2).join(', ')}${approvedNames.length > 2 ? `, and ${approvedNames.length - 2} more` : ''} are now listed in Estate Contacts.`;
 
   const approvalBanner = approvedSuggestions.length > 0 && (
     <div className="approval-banner" role="status">

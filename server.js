@@ -418,7 +418,7 @@ async function notifySuggestionSubmitted(suggestion) {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: ADMIN_NOTIFY_EMAIL,
-        subject: `New Callbook suggestion: ${suggestion.name}`,
+        subject: `New Estate Contacts suggestion: ${suggestion.name}`,
         html: `
         <h2>New contact suggestion</h2>
         <p><strong>Estate, location:</strong> ${escapeHtml(suggestion.estate)}</p>
@@ -427,7 +427,7 @@ async function notifySuggestionSubmitted(suggestion) {
         <p><strong>Category:</strong> ${escapeHtml(suggestion.category)}</p>
         <p><strong>Service area:</strong> ${escapeHtml(suggestion.service_area)}</p>
         <p><strong>Notes:</strong> ${escapeHtml(suggestion.note)}</p>
-        <p>Open the Callbook admin page to review and approve it.</p>
+        <p>Open the Estate Contacts admin page to review and approve it.</p>
       `,
       }),
     });
@@ -689,7 +689,7 @@ if (isDev) {
 }
 
 app.listen(PORT, () => {
-  console.log(`Callbook server running at http://localhost:${PORT}`);
+  console.log(`Estate Contacts server running at http://localhost:${PORT}`);
 });
 
 process.on('uncaughtException', (err) => {

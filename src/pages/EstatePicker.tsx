@@ -50,7 +50,7 @@ export function EstatePicker({ onSelect, onSuggest }: EstatePickerProps) {
         <div className="estate-picker-icon">
           <MapPin size={28} />
         </div>
-        <h1>Welcome to Callbook</h1>
+        <h1>Welcome to Estate Contacts</h1>
         <p>Select your community to see local service contacts</p>
       </div>
 
