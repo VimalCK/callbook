@@ -30,7 +30,7 @@ export function BottomNav({ active, onChange, cancelMode = false }: BottomNavPro
         ) : (
           <BookOpen size={21} strokeWidth={active === 'home' ? 2.2 : 1.8} />
         )}
-        <span>{cancelMode ? 'Cancel' : 'Services'}</span>
+        <span>{cancelMode ? 'Cancel' : 'Service Providers'}</span>
       </button>
       <button
         className={`nav-btn ${active === 'suggest' ? 'active' : ''}`}

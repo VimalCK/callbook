@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home, Tag } from 'lucide-react';
 import { Header } from '../components/Header';
+import { SearchBar } from '../components/SearchBar';
 import { getInitials } from '../utils/initials';
 import './AdminPage.css';
 
@@ -222,6 +223,7 @@ export function AdminPage() {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [estates, setEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
   const [estateFilter, setEstateFilter] = useState<string>('');
+  const [providerSearch, setProviderSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -479,9 +481,19 @@ export function AdminPage() {
 
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
 
-  const filteredProviders = estateFilter
+  const selectedEstateProviders = estateFilter
     ? providers.filter(p => p.estate_id === Number(estateFilter))
     : [];
+
+  const providerSearchTerm = providerSearch.trim().toLowerCase();
+  const filteredProviders = providerSearchTerm
+    ? selectedEstateProviders.filter(p => {
+      const categoryName = categories.find(c => c.id === p.category)?.name || p.category;
+      return [p.name, p.business_name, p.phone, p.whatsapp, p.service_area, categoryName]
+        .filter(Boolean)
+        .some(value => String(value).toLowerCase().includes(providerSearchTerm));
+    })
+    : selectedEstateProviders;
 
   const getSelectedEstateName = () => {
     const estate = estates.find(e => e.id === Number(estateFilter));
@@ -587,6 +599,8 @@ export function AdminPage() {
                 />
               )}
 
+              <SearchBar value={providerSearch} onChange={setProviderSearch} placeholder="Search service providers" />
+
               <div className="admin-table">
                 {filteredProviders.map(p => (
                   <div key={p.id} className="admin-row" style={{ cursor: 'pointer' }} onClick={() => handleEdit(p)}>
@@ -614,8 +628,8 @@ export function AdminPage() {
                 {filteredProviders.length === 0 && (
                   <div className="admin-empty">
                     <Users size={24} />
-                    <p>No service providers yet</p>
-                    <span>Click "Add" to get started</span>
+                    <p>{providerSearchTerm ? 'No matching service providers' : 'No service providers yet'}</p>
+                    <span>{providerSearchTerm ? 'Try a different name, phone, area, or category' : 'Click "Add" to get started'}</span>
                   </div>
                 )}
               </div>
