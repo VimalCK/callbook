@@ -1,4 +1,4 @@
-import { MapPin, Phone, MessageCircle, Shield, RefreshCw } from 'lucide-react';
+import { MapPin, Phone, MessageCircle, Shield, RefreshCw, Heart } from 'lucide-react';
 import './AboutPage.css';
 
 declare const __APP_VERSION__: string;
@@ -81,7 +81,9 @@ export function AboutPage({ onSwitchEstate }: AboutPageProps) {
       </div>
 
       <footer className="about-footer">
-        <p>Made for the estate</p>
+        <p>
+          Built with <Heart className="about-heart" size={12} fill="currentColor" /> for neighbors who help each other.
+        </p>
       </footer>
     </div>
   );
