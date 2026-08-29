@@ -316,7 +316,8 @@
 }
 
 .admin-form-card.admin-suggestion-edit-card {
-  box-shadow: inset 0 0 0 0.5px var(--color-divider);
+  box-shadow: none;
+  border-radius: 0;
   padding: 0;
   margin-bottom: 0;
 }
@@ -446,9 +447,9 @@
   color: var(--color-error);
 }
 
-.admin-field input,
-.admin-field select,
-.admin-field textarea {
+.admin-field input:not(.form-control),
+.admin-field select:not(.form-control),
+.admin-field textarea:not(.form-control) {
   height: 40px;
   padding: 0 var(--sp-3);
   background: var(--color-bg);
@@ -461,20 +462,20 @@
   transition: box-shadow var(--duration-fast);
 }
 
-.admin-field textarea {
+.admin-field textarea:not(.form-textarea) {
   height: auto;
   padding: var(--sp-2) var(--sp-3);
   resize: vertical;
 }
 
-.admin-field input:focus,
-.admin-field select:focus,
-.admin-field textarea:focus {
+.admin-field input:not(.form-control):focus,
+.admin-field select:not(.form-control):focus,
+.admin-field textarea:not(.form-control):focus {
   box-shadow: inset 0 0 0 0.5px var(--color-primary), 0 0 0 2px var(--color-primary-subtle);
 }
 
-.admin-field input::placeholder,
-.admin-field textarea::placeholder {
+.admin-field input:not(.form-control)::placeholder,
+.admin-field textarea:not(.form-control)::placeholder {
   color: var(--color-text-tertiary);
 }
 
@@ -863,23 +864,6 @@
 
 .admin-select-trigger {
   width: 100%;
-  height: 40px;
-  padding: 0 var(--sp-3);
-  background: var(--color-bg);
-  border: 0;
-  border-radius: 0;
-  box-shadow: inset 0 0 0 0.5px var(--color-divider);
-  color: var(--color-text-primary);
-  font-size: var(--text-base);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: box-shadow var(--duration-fast);
-}
-
-.admin-select-trigger:focus {
-  box-shadow: inset 0 0 0 0.5px var(--color-primary), 0 0 0 2px var(--color-primary-subtle);
 }
 
 .admin-select-trigger svg {
@@ -933,24 +917,6 @@
 
 .admin-cat-input {
   flex: 1;
-  height: 40px;
-  padding: 0 var(--sp-3);
-  background: var(--color-bg);
-  border: 0;
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 0.5px var(--color-divider);
-  color: var(--color-text-primary);
-  font-size: var(--text-base);
-  outline: none;
-  transition: box-shadow var(--duration-fast);
-}
-
-.admin-cat-input:focus {
-  box-shadow: inset 0 0 0 0.5px var(--color-primary), 0 0 0 2px var(--color-primary-subtle);
-}
-
-.admin-cat-input::placeholder {
-  color: var(--color-text-tertiary);
 }
 
 

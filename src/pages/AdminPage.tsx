@@ -58,13 +58,14 @@ const EMPTY_FORM = {
 type FormData = typeof EMPTY_FORM;
 
 /* Shared edit form used by both providers and suggestions */
-function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories }: {
+function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories, placeholderLabels = false }: {
   form: FormData;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   submitLabel: string;
   categories: CategoryRow[];
+  placeholderLabels?: boolean;
 }) {
   const [catOpen, setCatOpen] = useState(false);
   const catRef = useRef<HTMLDivElement>(null);
@@ -88,17 +89,17 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories 
     <form onSubmit={onSubmit}>
       <div className="admin-form-grid">
         <div className="admin-field">
-          <label>Person name <span className="req">*</span></label>
-          <input name="name" value={form.name} onChange={onChange} required placeholder="e.g. Rajesh Kumar" />
+          {!placeholderLabels && <label>Person name <span className="req">*</span></label>}
+          <input className="form-control" name="name" value={form.name} onChange={onChange} required placeholder={placeholderLabels ? 'Person name *' : 'e.g. Rajesh Kumar'} aria-label="Person name" />
         </div>
         <div className="admin-field">
-          <label>Business name</label>
-          <input name="business_name" value={form.business_name} onChange={onChange} placeholder="e.g. Kumar Plumbing" />
+          {!placeholderLabels && <label>Business name</label>}
+          <input className="form-control" name="business_name" value={form.business_name} onChange={onChange} placeholder={placeholderLabels ? 'Business name' : 'e.g. Kumar Plumbing'} aria-label="Business name" />
         </div>
         <div className="admin-field">
-          <label>Category <span className="req">*</span></label>
+          {!placeholderLabels && <label>Category <span className="req">*</span></label>}
           <div className="admin-custom-select" ref={catRef}>
-            <button type="button" className="admin-select-trigger" onClick={() => setCatOpen(!catOpen)}>
+            <button type="button" className="admin-select-trigger form-select-trigger" onClick={() => setCatOpen(!catOpen)} aria-label="Category">
               <span>{categories.find(c => c.id === form.category)?.name || 'Select'}</span>
               <ChevronDown size={14} className={catOpen ? 'rotated' : ''} />
             </button>
@@ -119,32 +120,32 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories 
           </div>
         </div>
         <div className="admin-field">
-          <label>Phone <span className="req">*</span></label>
-          <input name="phone" value={form.phone} onChange={onChange} required placeholder="+919876543210" />
+          {!placeholderLabels && <label>Phone <span className="req">*</span></label>}
+          <input className="form-control" name="phone" value={form.phone} onChange={onChange} required placeholder={placeholderLabels ? 'Phone *' : '+919876543210'} aria-label="Phone" />
         </div>
         <div className="admin-field">
-          <label>WhatsApp number</label>
-          <input name="whatsapp" value={form.whatsapp} onChange={onChange} placeholder="919876543210 (no + sign)" />
+          {!placeholderLabels && <label>WhatsApp number</label>}
+          <input className="form-control" name="whatsapp" value={form.whatsapp} onChange={onChange} placeholder={placeholderLabels ? 'WhatsApp number' : '919876543210 (no + sign)'} aria-label="WhatsApp number" />
         </div>
         <div className="admin-field">
-          <label>Service area</label>
-          <input name="service_area" value={form.service_area} onChange={onChange} placeholder="e.g. All Sectors" />
+          {!placeholderLabels && <label>Service area</label>}
+          <input className="form-control" name="service_area" value={form.service_area} onChange={onChange} placeholder={placeholderLabels ? 'Service area' : 'e.g. All Sectors'} aria-label="Service area" />
         </div>
         <div className="admin-field">
-          <label>Working hours</label>
-          <input name="working_hours" value={form.working_hours} onChange={onChange} placeholder="e.g. Mon–Sat, 9 AM – 6 PM" />
+          {!placeholderLabels && <label>Working hours</label>}
+          <input className="form-control" name="working_hours" value={form.working_hours} onChange={onChange} placeholder={placeholderLabels ? 'Working hours' : 'e.g. Mon-Sat, 9 AM - 6 PM'} aria-label="Working hours" />
         </div>
         <div className="admin-field">
-          <label>Estate, location</label>
-          <input name="estate_name" value={form.estate_name} onChange={onChange} placeholder="e.g. Ballymakenny Park, Drogheda" />
+          {!placeholderLabels && <label>Estate, location</label>}
+          <input className="form-control" name="estate_name" value={form.estate_name} onChange={onChange} placeholder={placeholderLabels ? 'Estate, location' : 'e.g. Ballymakenny Park, Drogheda'} aria-label="Estate, location" />
         </div>
         <div className="admin-field full-width">
-          <label>Description</label>
-          <textarea name="description" value={form.description} onChange={onChange} rows={2} placeholder="Brief description of services..." />
+          {!placeholderLabels && <label>Description</label>}
+          <textarea className="form-control form-textarea" name="description" value={form.description} onChange={onChange} rows={2} placeholder={placeholderLabels ? 'Description' : 'Brief description of services...'} aria-label="Description" />
         </div>
         <div className="admin-field full-width">
-          <label>Services (comma separated)</label>
-          <input name="services" value={form.services} onChange={onChange} placeholder="Pipe repair, Leak fixing, Bathroom fitting" />
+          {!placeholderLabels && <label>Services (comma separated)</label>}
+          <input className="form-control" name="services" value={form.services} onChange={onChange} placeholder={placeholderLabels ? 'Services' : 'Pipe repair, Leak fixing, Bathroom fitting'} aria-label="Services" />
         </div>
         <div className="admin-field">
           <label className="admin-checkbox">
@@ -635,6 +636,7 @@ export function AdminPage() {
                   onCancel={() => setEditingSuggestion(null)}
                   submitLabel="Save"
                   categories={categories}
+                  placeholderLabels
                 />
               </div>
             </div>
@@ -748,13 +750,13 @@ export function AdminPage() {
           <div className="admin-cat-add" style={{ padding: '0 var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
             <div className="admin-cat-add-row">
               <input
-                className="admin-cat-input"
+                className="admin-cat-input form-control"
                 value={newCatId}
                 onChange={e => setNewCatId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                 placeholder="slug (e.g. locksmith)"
               />
               <input
-                className="admin-cat-input"
+                className="admin-cat-input form-control"
                 value={newCatName}
                 onChange={e => setNewCatName(e.target.value)}
                 placeholder="Display name"
@@ -796,14 +798,14 @@ export function AdminPage() {
                     </div>
                     <div className="admin-row-content" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <input
-                        className="admin-cat-input"
+                        className="admin-cat-input form-control"
                         value={editCatName}
                         onChange={e => setEditCatName(e.target.value)}
                         placeholder="Name"
                         style={{ flex: 1 }}
                       />
                       <input
-                        className="admin-cat-input"
+                        className="admin-cat-input form-control"
                         value={editCatDesc}
                         onChange={e => setEditCatDesc(e.target.value)}
                         placeholder="Description"

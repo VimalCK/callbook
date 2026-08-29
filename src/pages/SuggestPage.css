@@ -59,9 +59,9 @@
   color: var(--color-error);
 }
 
-.suggest-field input,
-.suggest-field select,
-.suggest-field textarea {
+.suggest-field input:not(.form-control),
+.suggest-field select:not(.form-control),
+.suggest-field textarea:not(.form-control) {
   height: 40px;
   padding: 0 var(--sp-3);
   background: var(--color-bg);
@@ -81,24 +81,24 @@
   }
 }
 
-.suggest-field textarea {
+.suggest-field textarea:not(.form-textarea) {
   height: auto;
   min-height: 64px;
   padding: var(--sp-2) var(--sp-3);
   resize: vertical;
 }
 
-.suggest-field input:focus,
-.suggest-field select:focus,
-.suggest-field textarea:focus {
+.suggest-field input:not(.form-control):focus,
+.suggest-field select:not(.form-control):focus,
+.suggest-field textarea:not(.form-control):focus {
   box-shadow: inset 0 0 0 0.5px var(--color-primary), 0 0 0 2px var(--color-primary-subtle);
 }
 
 .suggest-field:focus-within {
 }
 
-.suggest-field input::placeholder,
-.suggest-field textarea::placeholder {
+.suggest-field input:not(.form-control)::placeholder,
+.suggest-field textarea:not(.form-control)::placeholder {
   color: var(--color-text-tertiary);
 }
 
@@ -141,22 +141,6 @@
   border: solid var(--color-text-inverse);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg) translate(-1px, -1px);
-}
-
-.suggest-field input:-webkit-autofill,
-.suggest-field input:-webkit-autofill:hover,
-.suggest-field input:-webkit-autofill:focus,
-.combobox-input:-webkit-autofill,
-.combobox-input:-webkit-autofill:hover,
-.combobox-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--color-text-primary);
-  box-shadow: inset 0 0 0 0.5px var(--color-divider), inset 0 0 0 1000px var(--color-bg);
-  transition: background-color 9999s ease-out;
-}
-
-.suggest-field input:-webkit-autofill:focus,
-.combobox-input:-webkit-autofill:focus {
-  box-shadow: inset 0 0 0 0.5px var(--color-primary), 0 0 0 2px var(--color-primary-subtle), inset 0 0 0 1000px var(--color-bg);
 }
 
 .suggest-error {
@@ -272,23 +256,6 @@
 /* Custom dropdown trigger */
 .combobox-trigger {
   width: 100%;
-  height: 42px;
-  padding: 0 var(--sp-3);
-  background: var(--color-bg);
-  border: 0;
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 0.5px var(--color-divider);
-  color: var(--color-text-primary);
-  font-size: var(--text-md);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: box-shadow var(--duration-fast);
-}
-
-.combobox-trigger:focus {
-  box-shadow: inset 0 0 0 0.5px var(--color-primary), 0 0 0 2px var(--color-primary-subtle);
 }
 
 .combobox-arrow-btn {

@@ -38,7 +38,7 @@ function CategoryDropdown({ value, onChange, categories }: { value: string; onCh
 
   return (
     <div className="combobox-wrap" ref={ref}>
-      <button type="button" className="combobox-trigger" onClick={() => setOpen(!open)} aria-label="Service category">
+      <button type="button" className="combobox-trigger form-select-trigger" onClick={() => setOpen(!open)} aria-label="Service category">
         <span>{selectedName}</span>
         <ChevronDown size={16} className={`combobox-arrow-btn ${open ? 'rotated' : ''}`} />
       </button>
@@ -198,7 +198,7 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
             id="s-estate"
             name="estate"
             type="text"
-            className="suggest-estate-input"
+            className="suggest-estate-input form-control"
             value={estateInput}
             onChange={e => setEstateInput(e.target.value)}
             placeholder="Estate, location *"
@@ -211,21 +211,21 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
 
         <div className="suggest-field-row">
           <div className="suggest-field">
-              <input id="s-name" name="name" value={form.name} onChange={handleChange} required placeholder="Person name *" aria-label="Person name" />
+              <input className="form-control" id="s-name" name="name" value={form.name} onChange={handleChange} required placeholder="Person name *" aria-label="Person name" />
           </div>
 
           <div className="suggest-field">
-            <input id="s-business" name="business_name" value={form.business_name} onChange={handleChange} placeholder="Business name" aria-label="Business name" />
+            <input className="form-control" id="s-business" name="business_name" value={form.business_name} onChange={handleChange} placeholder="Business name" aria-label="Business name" />
           </div>
         </div>
 
         <div className="suggest-field-row">
           <div className="suggest-field">
-            <input id="s-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required placeholder="Phone number *" aria-label="Phone number" />
+            <input className="form-control" id="s-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required placeholder="Phone number *" aria-label="Phone number" />
           </div>
 
           <div className="suggest-field">
-            <input id="s-whatsapp" name="whatsapp" type="tel" value={form.whatsapp} onChange={handleChange} placeholder="WhatsApp number" aria-label="WhatsApp number" />
+            <input className="form-control" id="s-whatsapp" name="whatsapp" type="tel" value={form.whatsapp} onChange={handleChange} placeholder="WhatsApp number" aria-label="WhatsApp number" />
           </div>
         </div>
 
@@ -239,20 +239,20 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
           </div>
 
           <div className="suggest-field">
-            <input id="s-area" name="service_area" value={form.service_area} onChange={handleChange} placeholder="Service area" aria-label="Service area" />
+            <input className="form-control" id="s-area" name="service_area" value={form.service_area} onChange={handleChange} placeholder="Service area" aria-label="Service area" />
           </div>
         </div>
 
         <div className="suggest-field">
-          <input id="s-hours" name="working_hours" value={form.working_hours} onChange={handleChange} placeholder="Working hours" aria-label="Working hours" />
+          <input className="form-control" id="s-hours" name="working_hours" value={form.working_hours} onChange={handleChange} placeholder="Working hours" aria-label="Working hours" />
         </div>
 
         <div className="suggest-field">
-          <textarea id="s-note" name="note" value={form.note} onChange={handleChange} rows={3} placeholder="Additional notes" aria-label="Additional notes" />
+          <textarea className="form-control form-textarea" id="s-note" name="note" value={form.note} onChange={handleChange} rows={3} placeholder="Additional notes" aria-label="Additional notes" />
         </div>
 
         <div className="suggest-field">
-          <input id="s-services" name="services" value={form.services} onChange={handleChange} placeholder="Services" aria-label="Services" />
+          <input className="form-control" id="s-services" name="services" value={form.services} onChange={handleChange} placeholder="Services" aria-label="Services" />
         </div>
 
         <div className="suggest-field">
