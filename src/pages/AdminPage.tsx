@@ -181,9 +181,10 @@ function EstateFilterDropdown({ estates, providers, value, onChange }: {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  const selectedLabel = value === 'all'
-    ? `All estates (${providers.length})`
-    : `${estates.find(e => String(e.id) === value)?.name || ''} (${providers.filter(p => p.estate_id === Number(value)).length})`;
+  const selectedEstate = estates.find(e => String(e.id) === value) || estates[0];
+  const selectedLabel = selectedEstate
+    ? `${selectedEstate.name} (${providers.filter(p => p.estate_id === selectedEstate.id).length})`
+    : 'Select estate';
 
   return (
     <div className="admin-filter-bar" ref={ref}>
@@ -193,13 +194,6 @@ function EstateFilterDropdown({ estates, providers, value, onChange }: {
       </button>
       {open && (
         <div className="admin-filter-dropdown">
-          <button
-            className={`admin-filter-option ${value === 'all' ? 'active' : ''}`}
-            onClick={() => { onChange('all'); setOpen(false); }}
-          >
-            All estates
-            <span className="admin-filter-count">{providers.length}</span>
-          </button>
           {estates.map(est => {
             const count = providers.filter(p => p.estate_id === est.id).length;
             return (
@@ -227,7 +221,7 @@ export function AdminPage() {
   const [suggestions, setSuggestions] = useState<SuggestionRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [estates, setEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
-  const [estateFilter, setEstateFilter] = useState<string>('all');
+  const [estateFilter, setEstateFilter] = useState<string>('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -301,6 +295,12 @@ export function AdminPage() {
   };
 
   useEffect(() => { if (token) fetchData(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!estateFilter && estates.length > 0) {
+      setEstateFilter(String(estates[0].id));
+    }
+  }, [estateFilter, estates]);
 
   const flash = (msg: string) => {
     setMessage(msg);
@@ -473,12 +473,11 @@ export function AdminPage() {
 
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
 
-  const filteredProviders = estateFilter === 'all'
-    ? providers
-    : providers.filter(p => p.estate_id === Number(estateFilter));
+  const filteredProviders = estateFilter
+    ? providers.filter(p => p.estate_id === Number(estateFilter))
+    : [];
 
   const getSelectedEstateName = () => {
-    if (estateFilter === 'all') return '';
     const estate = estates.find(e => e.id === Number(estateFilter));
     return estate ? [estate.name, estate.description].filter(Boolean).join(', ') : '';
   };
@@ -549,9 +548,8 @@ export function AdminPage() {
 
       {/* ===== PROVIDERS TAB ===== */}
       {tab === 'providers' && (
-        <div className="admin-section">
-          <div className="admin-section-header">
-            <h2>All Service Providers</h2>
+        <div className="admin-section admin-providers-section">
+          <div className="admin-section-actions">
             <button className="admin-primary-btn" onClick={handleAddProvider}>
               <Plus size={15} />
               Add

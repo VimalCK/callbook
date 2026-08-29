@@ -304,6 +304,10 @@
   padding-top: var(--sp-4);
 }
 
+.admin-providers-section {
+  padding-top: var(--sp-4);
+}
+
 .admin-suggestions-section {
   padding-top: var(--sp-4);
 }
@@ -328,6 +332,13 @@
   justify-content: space-between;
   margin-bottom: var(--sp-3);
   padding: 0 var(--sp-4);
+  flex-shrink: 0;
+}
+
+.admin-section-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 var(--sp-4) var(--sp-3);
   flex-shrink: 0;
 }
 
