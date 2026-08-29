@@ -633,7 +633,7 @@ export function AdminPage() {
                   onChange={handleSuggestionFormChange}
                   onSubmit={handleSaveSuggestion}
                   onCancel={() => setEditingSuggestion(null)}
-                  submitLabel="Save"
+                  submitLabel="Save changes"
                   categories={categories}
                   placeholderLabels
                 />
