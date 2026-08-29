@@ -312,6 +312,20 @@
   padding-top: var(--sp-4);
 }
 
+.admin-provider-edit-screen {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-4) var(--sp-4) 0;
+}
+
+.admin-form-card.admin-provider-edit-card {
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 0;
+}
+
 .admin-suggestion-edit-screen {
   flex: 1;
   min-height: 0;
@@ -511,6 +525,26 @@
   margin-top: var(--sp-4);
   padding: var(--sp-3) 0 var(--sp-1);
   background: var(--color-bg);
+}
+
+.admin-provider-edit-card .admin-form-footer {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 1.45fr;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) 0 var(--sp-1);
+  background: var(--color-bg);
+}
+
+.admin-provider-edit-card .admin-form-footer button {
+  width: 100%;
+  justify-content: center;
+}
+
+.admin-provider-edit-card .admin-form-footer .admin-secondary-btn {
+  color: var(--color-text-tertiary);
 }
 
 .admin-suggestion-edit-card .admin-form-footer button {

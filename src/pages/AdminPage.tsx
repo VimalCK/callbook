@@ -90,11 +90,11 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories,
       <div className="admin-form-grid">
         <div className="admin-field">
           {!placeholderLabels && <label>Person name <span className="req">*</span></label>}
-          <input className="form-control" name="name" value={form.name} onChange={onChange} required placeholder={placeholderLabels ? 'Person name *' : 'e.g. Rajesh Kumar'} aria-label="Person name" />
+          <input className="form-control" name="name" value={form.name} onChange={onChange} required placeholder={placeholderLabels ? 'Person name *' : 'e.g. John Murphy'} aria-label="Person name" />
         </div>
         <div className="admin-field">
           {!placeholderLabels && <label>Business name</label>}
-          <input className="form-control" name="business_name" value={form.business_name} onChange={onChange} placeholder={placeholderLabels ? 'Business name' : 'e.g. Kumar Plumbing'} aria-label="Business name" />
+          <input className="form-control" name="business_name" value={form.business_name} onChange={onChange} placeholder={placeholderLabels ? 'Business name' : 'e.g. Murphy Plumbing'} aria-label="Business name" />
         </div>
         <div className="admin-field">
           {!placeholderLabels && <label>Category <span className="req">*</span></label>}
@@ -121,15 +121,15 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories,
         </div>
         <div className="admin-field">
           {!placeholderLabels && <label>Phone <span className="req">*</span></label>}
-          <input className="form-control" name="phone" value={form.phone} onChange={onChange} required placeholder={placeholderLabels ? 'Phone *' : '+919876543210'} aria-label="Phone" />
+          <input className="form-control" name="phone" value={form.phone} onChange={onChange} required placeholder={placeholderLabels ? 'Phone *' : '+353 87 123 4567'} aria-label="Phone" />
         </div>
         <div className="admin-field">
           {!placeholderLabels && <label>WhatsApp number</label>}
-          <input className="form-control" name="whatsapp" value={form.whatsapp} onChange={onChange} placeholder={placeholderLabels ? 'WhatsApp number' : '919876543210 (no + sign)'} aria-label="WhatsApp number" />
+          <input className="form-control" name="whatsapp" value={form.whatsapp} onChange={onChange} placeholder={placeholderLabels ? 'WhatsApp number' : '+353 87 123 4567'} aria-label="WhatsApp number" />
         </div>
         <div className="admin-field">
           {!placeholderLabels && <label>Service area</label>}
-          <input className="form-control" name="service_area" value={form.service_area} onChange={onChange} placeholder={placeholderLabels ? 'Service area' : 'e.g. All Sectors'} aria-label="Service area" />
+          <input className="form-control" name="service_area" value={form.service_area} onChange={onChange} placeholder={placeholderLabels ? 'Service area' : 'e.g. Drogheda'} aria-label="Service area" />
         </div>
         <div className="admin-field">
           {!placeholderLabels && <label>Working hours</label>}
@@ -239,6 +239,8 @@ export function AdminPage() {
 
   const switchTab = (t: 'providers' | 'suggestions' | 'categories') => {
     setTab(t);
+    setShowForm(false);
+    setEditingId(null);
     setEditingSuggestion(null);
     setExpandedSuggestion(null);
     fetchData();
@@ -549,74 +551,72 @@ export function AdminPage() {
       {/* ===== PROVIDERS TAB ===== */}
       {tab === 'providers' && (
         <div className="admin-section admin-providers-section">
-          <div className="admin-section-actions">
-            <button className="admin-primary-btn" onClick={handleAddProvider}>
-              <Plus size={15} />
-              Add
-            </button>
-          </div>
-
-          {/* Estate filter */}
-          {estates.length > 0 && (
-            <EstateFilterDropdown
-              estates={estates}
-              providers={providers}
-              value={estateFilter}
-              onChange={setEstateFilter}
-            />
-          )}
-
-          {showForm && (
-            <div className="admin-form-card">
-              <div className="admin-form-header">
-                <h3>{editingId ? 'Edit Provider' : 'New Provider'}</h3>
-                <button className="admin-icon-btn" onClick={() => { setShowForm(false); setEditingId(null); }}>
-                  <X size={18} />
+          {showForm ? (
+            <div className="admin-provider-edit-screen">
+              <div className="admin-form-card admin-provider-edit-card">
+                <EditForm
+                  form={form}
+                  onChange={handleChange}
+                  onSubmit={handleSubmit}
+                  onCancel={() => { setShowForm(false); setEditingId(null); }}
+                  submitLabel={editingId ? 'Save changes' : 'Add provider'}
+                  categories={categories}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="admin-section-actions">
+                <button className="admin-primary-btn" onClick={handleAddProvider}>
+                  <Plus size={15} />
+                  Add
                 </button>
               </div>
-              <EditForm
-                form={form}
-                onChange={handleChange}
-                onSubmit={handleSubmit}
-                onCancel={() => { setShowForm(false); setEditingId(null); }}
-                submitLabel={editingId ? 'Save changes' : 'Add provider'}
-                categories={categories}
-              />
-            </div>
-          )}
 
-          <div className="admin-table">
-            {filteredProviders.map(p => (
-              <div key={p.id} className="admin-row" style={{ cursor: 'pointer' }} onClick={() => handleEdit(p)}>
-                <div className="admin-row-avatar">
-                  {getInitials(p.business_name || p.name)}
-                </div>
-                <div className="admin-row-content">
-                  <div className="admin-row-title">
-                    {p.business_name || p.name}
-                    {p.is_verified && <BadgeCheck size={13} className="admin-verified" />}
+              {/* Estate filter */}
+              {estates.length > 0 && (
+                <EstateFilterDropdown
+                  estates={estates}
+                  providers={providers}
+                  value={estateFilter}
+                  onChange={setEstateFilter}
+                />
+              )}
+
+              <div className="admin-table">
+                {filteredProviders.map(p => (
+                  <div key={p.id} className="admin-row" style={{ cursor: 'pointer' }} onClick={() => handleEdit(p)}>
+                    <div className="admin-row-avatar">
+                      {getInitials(p.business_name || p.name)}
+                    </div>
+                    <div className="admin-row-content">
+                      <div className="admin-row-title">
+                        {p.business_name || p.name}
+                        {p.is_verified && <BadgeCheck size={13} className="admin-verified" />}
+                      </div>
+                      <div className="admin-row-meta">
+                        <span><Phone size={11} /> {p.phone}</span>
+                        {p.service_area && <span><MapPin size={11} /> {p.service_area}</span>}
+                        <span className="admin-row-cat">{categories.find(c => c.id === p.category)?.name || p.category}</span>
+                      </div>
+                    </div>
+                    <div className="admin-row-actions" onClick={e => e.stopPropagation()}>
+                      <button className="admin-icon-btn danger" onClick={() => handleDelete(p.id)} aria-label="Delete">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="admin-row-meta">
-                    <span><Phone size={11} /> {p.phone}</span>
-                    {p.service_area && <span><MapPin size={11} /> {p.service_area}</span>}
-                    <span className="admin-row-cat">{categories.find(c => c.id === p.category)?.name || p.category}</span>
+                ))}
+                {filteredProviders.length === 0 && (
+                  <div className="admin-empty">
+                    <Users size={24} />
+                    <p>No service providers yet</p>
+                    <span>Click "Add" to get started</span>
                   </div>
-                </div>
-                <div className="admin-row-actions" onClick={e => e.stopPropagation()}>
-                  <button className="admin-icon-btn danger" onClick={() => handleDelete(p.id)} aria-label="Delete">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+                )}
               </div>
-            ))}
-            {filteredProviders.length === 0 && (
-              <div className="admin-empty">
-                <Users size={24} />
-                <p>No service providers yet</p>
-                <span>Click "Add" to get started</span>
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       )}
 
@@ -633,7 +633,6 @@ export function AdminPage() {
                   onCancel={() => setEditingSuggestion(null)}
                   submitLabel="Save changes"
                   categories={categories}
-                  placeholderLabels
                 />
               </div>
             </div>
