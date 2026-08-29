@@ -256,7 +256,7 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
         </div>
 
         <div className="suggest-field">
-          <label className="suggest-checkbox">
+          <label className="suggest-checkbox form-checkbox">
             <input type="checkbox" name="is_verified" checked={form.is_verified} onChange={handleChange} />
             <span>Verified service provider</span>
           </label>

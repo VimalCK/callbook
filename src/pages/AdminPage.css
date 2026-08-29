@@ -447,7 +447,7 @@
   color: var(--color-error);
 }
 
-.admin-field input:not(.form-control),
+.admin-field input:not(.form-control):not([type="checkbox"]),
 .admin-field select:not(.form-control),
 .admin-field textarea:not(.form-control) {
   height: 40px;
@@ -468,31 +468,19 @@
   resize: vertical;
 }
 
-.admin-field input:not(.form-control):focus,
+.admin-field input:not(.form-control):not([type="checkbox"]):focus,
 .admin-field select:not(.form-control):focus,
 .admin-field textarea:not(.form-control):focus {
   box-shadow: inset 0 0 0 0.5px var(--color-primary), 0 0 0 2px var(--color-primary-subtle);
 }
 
-.admin-field input:not(.form-control)::placeholder,
+.admin-field input:not(.form-control):not([type="checkbox"])::placeholder,
 .admin-field textarea:not(.form-control)::placeholder {
   color: var(--color-text-tertiary);
 }
 
 .admin-checkbox {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--text-sm) !important;
-  color: var(--color-text-secondary) !important;
-  cursor: pointer;
   padding-top: var(--sp-3);
-}
-
-.admin-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--color-primary);
 }
 
 .admin-form-footer {

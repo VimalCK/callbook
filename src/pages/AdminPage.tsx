@@ -148,7 +148,7 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories,
           <input className="form-control" name="services" value={form.services} onChange={onChange} placeholder={placeholderLabels ? 'Services' : 'Pipe repair, Leak fixing, Bathroom fitting'} aria-label="Services" />
         </div>
         <div className="admin-field">
-          <label className="admin-checkbox">
+          <label className="admin-checkbox form-checkbox">
             <input type="checkbox" name="is_verified" checked={form.is_verified} onChange={onChange} />
             <BadgeCheck size={14} />
             <span>Verified provider</span>
