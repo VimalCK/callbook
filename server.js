@@ -658,6 +658,24 @@ app.delete('/api/admin/providers/:id', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+app.delete('/api/admin/estates/:id', requireAdmin, (req, res) => {
+  const estateId = Number(req.params.id);
+  if (!Number.isInteger(estateId) || estateId <= 0) return res.status(400).json({ error: 'Invalid estate id' });
+
+  const estate = db.prepare('SELECT id FROM estates WHERE id = ?').get(estateId);
+  if (!estate) return res.status(404).json({ error: 'Estate not found' });
+
+  const deleteEstate = db.transaction(() => {
+    db.prepare('DELETE FROM provider_feedback WHERE provider_id IN (SELECT id FROM providers WHERE estate_id = ?)').run(estateId);
+    const providerResult = db.prepare('DELETE FROM providers WHERE estate_id = ?').run(estateId);
+    db.prepare('DELETE FROM estates WHERE id = ?').run(estateId);
+    return providerResult.changes;
+  });
+
+  const deletedProviders = deleteEstate();
+  res.json({ success: true, deleted_providers: deletedProviders });
+});
+
 app.delete('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
   db.prepare("DELETE FROM providers WHERE id = ? AND status = 'pending'").run(req.params.id);
   res.json({ success: true });
@@ -687,7 +705,7 @@ app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
 
   try {
     db.prepare("UPDATE providers SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND status = 'pending'").run(req.params.id);
-    res.json({ success: true, estate_id: estateId });
+    res.json({ success: true, estate_id: suggestion.estate_id });
   } catch (err) {
     if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
     throw err;

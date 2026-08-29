@@ -352,6 +352,7 @@
 .admin-section-actions {
   display: flex;
   justify-content: flex-end;
+  gap: var(--sp-2);
   padding: 0 var(--sp-4) var(--sp-3);
   flex-shrink: 0;
 }
@@ -380,6 +381,10 @@
 .admin-primary-btn:hover { opacity: 0.85; }
 
 .admin-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 36px;
   padding: 0 var(--sp-4);
   background: var(--color-bg);
@@ -392,6 +397,19 @@
 }
 
 .admin-secondary-btn:hover { background: rgba(255, 255, 255, 0.04); }
+
+.admin-secondary-btn.danger {
+  color: var(--color-error);
+}
+
+.admin-secondary-btn.danger:hover {
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.admin-secondary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .admin-icon-btn {
   width: 34px;
@@ -622,6 +640,18 @@
 .admin-verified {
   color: var(--color-primary);
   flex-shrink: 0;
+}
+
+.admin-pending-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  color: var(--color-warning);
+  background: rgba(251, 191, 36, 0.1);
+  box-shadow: inset 0 0 0 0.5px rgba(251, 191, 36, 0.28);
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+  border-radius: var(--radius-sm);
 }
 
 .admin-row-meta {

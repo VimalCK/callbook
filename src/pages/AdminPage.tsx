@@ -19,6 +19,7 @@ interface ProviderRow {
   working_hours: string | null;
   is_verified: boolean;
   services: string[];
+  status: string;
 }
 
 interface SuggestionRow {
@@ -401,6 +402,31 @@ export function AdminPage() {
     });
   };
 
+  const handleDeleteEstate = () => {
+    const estate = estates.find(e => e.id === Number(estateFilter));
+    if (!estate) return;
+
+    const estateName = [estate.name, estate.description].filter(Boolean).join(', ');
+    const providerCount = providers.filter(p => p.estate_id === estate.id).length;
+    setConfirmDialog({
+      message: `Delete ${estateName} and all ${providerCount} service provider(s)? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const res = await fetch(`/api/admin/estates/${estate.id}`, { method: 'DELETE', headers: authHeaders });
+        if (handleUnauthorized(res)) return;
+        if (res.ok) {
+          flash('Estate deleted');
+          setEstateFilter('');
+          setProviderSearch('');
+          await fetchData();
+        } else {
+          const data = await res.json().catch(() => null);
+          flash(data?.error || 'Error deleting estate');
+        }
+      },
+    });
+  };
+
   const handleApprove = async (id: number) => {
     const res = await fetch(`/api/admin/suggestions/${id}/approve`, { method: 'POST', headers: authHeaders });
     if (handleUnauthorized(res)) return;
@@ -583,8 +609,11 @@ export function AdminPage() {
           ) : (
             <>
               <div className="admin-section-actions">
-                <button className="admin-primary-btn" onClick={handleAddProvider}>
-                  <Plus size={15} />
+                <button className="admin-secondary-btn danger" onClick={handleDeleteEstate} disabled={!estateFilter}>
+                  <Trash2 size={15} />
+                  Delete estate
+                </button>
+                <button className="admin-secondary-btn" onClick={handleAddProvider}>
                   Add
                 </button>
               </div>
@@ -611,6 +640,7 @@ export function AdminPage() {
                       <div className="admin-row-title">
                         {p.business_name || p.name}
                         {p.is_verified && <BadgeCheck size={13} className="admin-verified" />}
+                        {p.status === 'pending' && <span className="admin-pending-badge">Pending approval</span>}
                       </div>
                       <div className="admin-row-meta">
                         <span><Phone size={11} /> {p.phone}</span>
@@ -782,7 +812,7 @@ export function AdminPage() {
                 placeholder="Display name"
               />
               <button
-                className="admin-primary-btn"
+                className="admin-secondary-btn"
                 onClick={async () => {
                   if (!newCatId || !newCatName) return;
                   const res = await fetch('/api/admin/categories', {
@@ -801,7 +831,6 @@ export function AdminPage() {
                   }
                 }}
               >
-                <Plus size={15} />
                 Add
               </button>
             </div>
