@@ -809,6 +809,26 @@ app.put('/api/admin/providers/:id', requireAdmin, (req, res) => {
   }
 });
 
+app.get('/api/admin/providers/:id/feedback', requireAdmin, (req, res) => {
+  const provider = db.prepare('SELECT id FROM providers WHERE id = ?').get(req.params.id);
+  if (!provider) return res.status(404).json({ error: 'Provider not found' });
+
+  const items = db.prepare(`
+    SELECT id, rating, comment, created_at
+    FROM provider_feedback
+    WHERE provider_id = ?
+    ORDER BY created_at DESC, id DESC
+  `).all(req.params.id);
+
+  res.json(items);
+});
+
+app.delete('/api/admin/feedback/:id', requireAdmin, (req, res) => {
+  const result = db.prepare('DELETE FROM provider_feedback WHERE id = ?').run(req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Feedback not found' });
+  res.json({ success: true });
+});
+
 app.delete('/api/admin/providers/:id', requireAdmin, (req, res) => {
   const provider = db.prepare('SELECT estate_id FROM providers WHERE id = ?').get(req.params.id);
   if (!provider) return res.status(404).json({ error: 'Not found' });

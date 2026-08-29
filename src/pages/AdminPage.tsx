@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home, Tag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home, Tag, Star } from 'lucide-react';
 import { Header } from '../components/Header';
 import { SearchBar } from '../components/SearchBar';
 import { getInitials } from '../utils/initials';
@@ -20,6 +20,13 @@ interface ProviderRow {
   is_verified: boolean;
   services: string[];
   status: string;
+}
+
+interface FeedbackRow {
+  id: number;
+  rating: number;
+  comment: string | null;
+  created_at: string;
 }
 
 interface SuggestionRow {
@@ -259,6 +266,7 @@ export function AdminPage() {
   const [providerSearch, setProviderSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [providerFeedback, setProviderFeedback] = useState<FeedbackRow[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [message, setMessage] = useState('');
   const [tab, setTab] = useState<'providers' | 'suggestions' | 'categories'>('providers');
@@ -276,6 +284,7 @@ export function AdminPage() {
     setTab(t);
     setShowForm(false);
     setEditingId(null);
+    setProviderFeedback([]);
     setEditingSuggestion(null);
     setExpandedSuggestion(null);
     fetchData();
@@ -394,12 +403,20 @@ export function AdminPage() {
       flash(editingId ? 'Provider updated' : 'Provider added');
       setShowForm(false);
       setEditingId(null);
+      setProviderFeedback([]);
       setForm(EMPTY_FORM);
       await fetchData();
     } else {
       const data = await res.json().catch(() => null);
       flash(data?.error || 'Error saving. Check required fields.');
     }
+  };
+
+  const fetchProviderFeedback = async (providerId: number) => {
+    const res = await fetch(`/api/admin/providers/${providerId}/feedback`, { headers: authHeaders });
+    if (handleUnauthorized(res)) return;
+    if (res.ok) setProviderFeedback(await res.json());
+    else setProviderFeedback([]);
   };
 
   const handleEdit = (p: ProviderRow) => {
@@ -420,7 +437,25 @@ export function AdminPage() {
       estate_name: estate ? [estate.name, estate.description].filter(Boolean).join(', ') : p.estate_name || '',
     });
     setShowForm(true);
+    fetchProviderFeedback(p.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteFeedback = (feedbackId: number) => {
+    setConfirmDialog({
+      message: 'Delete this feedback permanently?',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const res = await fetch(`/api/admin/feedback/${feedbackId}`, { method: 'DELETE', headers: authHeaders });
+        if (handleUnauthorized(res)) return;
+        if (res.ok) {
+          flash('Feedback deleted');
+          setProviderFeedback(prev => prev.filter(item => item.id !== feedbackId));
+        } else {
+          flash('Error deleting feedback');
+        }
+      },
+    });
   };
 
   const handleDelete = async (id: number) => {
@@ -580,6 +615,7 @@ export function AdminPage() {
   const handleAddProvider = () => {
     setShowForm(true);
     setEditingId(null);
+    setProviderFeedback([]);
     setForm({ ...EMPTY_FORM, estate_name: getSelectedEstateName() });
   };
 
@@ -651,11 +687,42 @@ export function AdminPage() {
                   form={form}
                   onChange={handleChange}
                   onSubmit={handleSubmit}
-                  onCancel={() => { setShowForm(false); setEditingId(null); }}
+                  onCancel={() => { setShowForm(false); setEditingId(null); setProviderFeedback([]); }}
                   submitLabel={editingId ? 'Save changes' : 'Add provider'}
                   categories={categories}
                   showDisabledOption={Boolean(editingId)}
                 />
+                {editingId && (
+                  <div className="admin-feedback-panel">
+                    <div className="admin-feedback-header">
+                      <h3>Feedback</h3>
+                    </div>
+                    {providerFeedback.length > 0 ? (
+                      <div className="admin-feedback-list">
+                        {providerFeedback.map(item => (
+                          <div key={item.id} className="admin-feedback-item">
+                            <div className="admin-feedback-content">
+                              <div className="admin-feedback-meta">
+                                <span className="admin-feedback-rating">
+                                  {Array.from({ length: item.rating }, (_, i) => (
+                                    <Star key={i} size={9} fill="currentColor" />
+                                  ))}
+                                </span>
+                                <span>{new Date(item.created_at).toLocaleString()}</span>
+                              </div>
+                              <p>{item.comment || '-'}</p>
+                            </div>
+                            <button className="admin-icon-btn danger" onClick={() => handleDeleteFeedback(item.id)} aria-label="Delete feedback">
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="admin-feedback-empty">No feedback yet</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
