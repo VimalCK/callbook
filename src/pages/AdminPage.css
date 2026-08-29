@@ -602,6 +602,20 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+.admin-row-disabled {
+  background: rgba(239, 68, 68, 0.08);
+  opacity: 0.72;
+}
+
+.admin-row-disabled:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.admin-row-disabled .admin-row-avatar {
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--color-error);
+}
+
 .admin-row-avatar {
   width: 38px;
   height: 38px;
@@ -652,6 +666,22 @@
   font-weight: var(--weight-medium);
   line-height: 1.4;
   border-radius: var(--radius-sm);
+}
+
+.admin-disabled-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  color: var(--color-error);
+  background: rgba(239, 68, 68, 0.12);
+  box-shadow: inset 0 0 0 0.5px rgba(239, 68, 68, 0.32);
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+  border-radius: var(--radius-sm);
+}
+
+.admin-disable-checkbox {
+  color: var(--color-error) !important;
 }
 
 .admin-row-meta {

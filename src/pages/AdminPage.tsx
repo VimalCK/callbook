@@ -31,6 +31,7 @@ interface SuggestionRow {
   category: string;
   service_area: string | null;
   working_hours: string | null;
+  services?: string | string[] | null;
   note: string | null;
   estate_name: string | null;
   metadata: string | null;
@@ -57,14 +58,32 @@ const EMPTY_FORM = {
   service_area: '',
   working_hours: '',
   is_verified: false,
+  is_disabled: false,
   services: '',
   estate_name: '',
 };
 
 type FormData = typeof EMPTY_FORM;
 
+const formatServicesText = (value: string | string[] | boolean | null | undefined) => {
+  if (Array.isArray(value)) return value.join(', ');
+  if (typeof value !== 'string') return '';
+
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) return parsed.map(item => String(item).trim()).filter(Boolean).join(', ');
+  } catch {
+    // Already plain text.
+  }
+
+  return trimmed;
+};
+
 /* Shared edit form used by both providers and suggestions */
-function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories, placeholderLabels = false }: {
+function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories, placeholderLabels = false, showDisabledOption = false }: {
   form: FormData;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -72,6 +91,7 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories,
   submitLabel: string;
   categories: CategoryRow[];
   placeholderLabels?: boolean;
+  showDisabledOption?: boolean;
 }) {
   const [catOpen, setCatOpen] = useState(false);
   const catRef = useRef<HTMLDivElement>(null);
@@ -159,6 +179,14 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories,
             <span>Verified service provider</span>
           </label>
         </div>
+        {showDisabledOption && (
+          <div className="admin-field">
+            <label className="admin-checkbox form-checkbox admin-disable-checkbox">
+              <input type="checkbox" name="is_disabled" checked={form.is_disabled} onChange={onChange} />
+              <span>Disable service provider</span>
+            </label>
+          </div>
+        )}
       </div>
       <div className="admin-form-footer">
         <button type="button" className="admin-secondary-btn" onClick={onCancel}>Cancel</button>
@@ -287,7 +315,7 @@ export function AdminPage() {
   const fetchData = async () => {
     try {
       const [pRes, sRes, eRes, cRes] = await Promise.all([
-        fetch('/api/providers'),
+        fetch('/api/providers', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/suggestions', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/estates'),
         fetch('/api/categories'),
@@ -387,6 +415,7 @@ export function AdminPage() {
       service_area: p.service_area || '',
       working_hours: p.working_hours || '',
       is_verified: p.is_verified,
+      is_disabled: p.status === 'disabled',
       services: (p.services || []).join(', '),
       estate_name: estate ? [estate.name, estate.description].filter(Boolean).join(', ') : p.estate_name || '',
     });
@@ -468,7 +497,7 @@ export function AdminPage() {
       service_area: String(getSuggestedValue(s, 'service_area') || ''),
       working_hours: String(getSuggestedValue(s, 'working_hours') || meta.working_hours || ''),
       is_verified: Boolean(getSuggestedValue(s, 'is_verified') ?? meta.is_verified),
-      services: String(getSuggestedValue(s, 'services') || meta.services || ''),
+      services: formatServicesText(getSuggestedValue(s, 'services') || meta.services),
       estate_name: estate ? [estate.name, estate.description].filter(Boolean).join(', ') : s.estate_name || '',
     });
   };
@@ -625,6 +654,7 @@ export function AdminPage() {
                   onCancel={() => { setShowForm(false); setEditingId(null); }}
                   submitLabel={editingId ? 'Save changes' : 'Add provider'}
                   categories={categories}
+                  showDisabledOption={Boolean(editingId)}
                 />
               </div>
             </div>
@@ -654,7 +684,7 @@ export function AdminPage() {
 
               <div className="admin-table">
                 {filteredProviders.map(p => (
-                  <div key={p.id} className="admin-row" style={{ cursor: 'pointer' }} onClick={() => handleEdit(p)}>
+                  <div key={p.id} className={`admin-row ${p.status === 'disabled' ? 'admin-row-disabled' : ''}`} style={{ cursor: 'pointer' }} onClick={() => handleEdit(p)}>
                     <div className="admin-row-avatar">
                       {getInitials(p.business_name || p.name)}
                     </div>
@@ -663,6 +693,7 @@ export function AdminPage() {
                         {p.business_name || p.name}
                         {p.is_verified && <BadgeCheck size={13} className="admin-verified" />}
                         {p.status === 'pending' && <span className="admin-pending-badge">Pending approval</span>}
+                        {p.status === 'disabled' && <span className="admin-disabled-badge">Disabled</span>}
                       </div>
                       <div className="admin-row-meta">
                         <span><Phone size={11} /> {p.phone}</span>

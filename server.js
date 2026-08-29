@@ -425,15 +425,17 @@ app.get('/api/estates/:slug', (req, res) => {
 // Providers — filtered by estate
 app.get('/api/providers', (req, res) => {
   const estateSlug = req.query.estate;
+  const includeDisabled = req.headers['x-admin-token'] === ADMIN_PASSWORD;
+  const visibleStatuses = includeDisabled ? "'approved', 'pending', 'disabled'" : "'approved', 'pending'";
   let rows;
   if (estateSlug) {
     const estateId = getEstateId(estateSlug);
     if (!estateId) return res.json([]);
-    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.estate_id = ? AND providers.status IN ('approved', 'pending') ORDER BY
+    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.estate_id = ? AND providers.status IN (${visibleStatuses}) ORDER BY
       CASE WHEN COALESCE(providers.business_name, providers.name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
       LOWER(COALESCE(providers.business_name, providers.name)) ASC`).all(estateId);
   } else {
-    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.status IN ('approved', 'pending') ORDER BY
+    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.status IN (${visibleStatuses}) ORDER BY
       CASE WHEN COALESCE(providers.business_name, providers.name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
       LOWER(COALESCE(providers.business_name, providers.name)) ASC`).all();
   }
@@ -789,16 +791,17 @@ app.post('/api/admin/providers', requireAdmin, (req, res) => {
 });
 
 app.put('/api/admin/providers/:id', requireAdmin, (req, res) => {
-  const { name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, services, estate_name } = req.body;
+  const { name, business_name, category, description, phone, whatsapp, service_area, address, working_hours, image, is_verified, is_disabled, services, estate_name } = req.body;
   const existing = db.prepare('SELECT id, estate_id FROM providers WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
   const estateId = resolveEstateId(estate_name) || existing.estate_id;
+  const status = is_disabled ? 'disabled' : 'approved';
   try {
     db.prepare(`
       UPDATE providers SET estate_id = ?, name = ?, business_name = ?, category = ?, description = ?, phone = ?, phone_normalized = ?, whatsapp = ?,
-        service_area = ?, address = ?, working_hours = ?, image = ?, is_verified = ?, services = ?, updated_at = datetime('now')
+        service_area = ?, address = ?, working_hours = ?, image = ?, is_verified = ?, services = ?, status = ?, updated_at = datetime('now')
       WHERE id = ?
-    `).run(estateId, name, business_name || null, category, description || '', phone, normalizePhone(phone), whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []), req.params.id);
+    `).run(estateId, name, business_name || null, category, description || '', phone, normalizePhone(phone), whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []), status, req.params.id);
     res.json({ success: true });
   } catch (err) {
     if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
