@@ -621,7 +621,7 @@ app.post('/api/admin/providers', requireAdmin, (req, res) => {
       INSERT INTO providers (estate_id, name, business_name, category, description, phone, phone_normalized, whatsapp, service_area, address, working_hours, image, is_verified, services, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
     `).run(estateId, name, business_name || null, category, description || '', phone, normalizePhone(phone), whatsapp || null, service_area || null, address || null, working_hours || null, image || null, is_verified ? 1 : 0, JSON.stringify(services || []));
-    res.status(201).json({ id: result.lastInsertRowid });
+    res.status(201).json({ id: result.lastInsertRowid, estate_id: estateId });
   } catch (err) {
     if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
     throw err;
@@ -674,7 +674,7 @@ app.put('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
         service_area = ?, working_hours = ?, is_verified = ?, services = ?, updated_at = datetime('now')
       WHERE id = ? AND status = 'pending'
     `).run(estateId, name, business_name || null, category, note || '', phone, normalizePhone(phone), whatsapp || null, service_area || null, working_hours || null, is_verified ? 1 : 0, JSON.stringify(services ? services.split(',').map(s => s.trim()).filter(Boolean) : []), req.params.id);
-    res.json({ success: true });
+    res.json({ success: true, estate_id: estateId });
   } catch (err) {
     if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
     throw err;
@@ -687,7 +687,7 @@ app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
 
   try {
     db.prepare("UPDATE providers SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND status = 'pending'").run(req.params.id);
-    res.json({ success: true });
+    res.json({ success: true, estate_id: estateId });
   } catch (err) {
     if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);
     throw err;

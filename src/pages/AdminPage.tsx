@@ -352,11 +352,15 @@ export function AdminPage() {
 
     if (handleUnauthorized(res)) return;
     if (res.ok) {
+      const data = await res.json().catch(() => null);
+      if (Number.isInteger(data?.estate_id)) {
+        setEstateFilter(String(data.estate_id));
+      }
       flash(editingId ? 'Provider updated' : 'Provider added');
       setShowForm(false);
       setEditingId(null);
       setForm(EMPTY_FORM);
-      fetchData();
+      await fetchData();
     } else {
       const data = await res.json().catch(() => null);
       flash(data?.error || 'Error saving. Check required fields.');
