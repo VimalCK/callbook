@@ -150,8 +150,7 @@ function EditForm({ form, onChange, onSubmit, onCancel, submitLabel, categories,
         <div className="admin-field">
           <label className="admin-checkbox form-checkbox">
             <input type="checkbox" name="is_verified" checked={form.is_verified} onChange={onChange} />
-            <BadgeCheck size={14} />
-            <span>Verified provider</span>
+            <span>Verified service provider</span>
           </label>
         </div>
       </div>
