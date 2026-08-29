@@ -601,6 +601,22 @@
   border-radius: var(--radius-sm);
 }
 
+.admin-row-estate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  min-width: 0;
+}
+
+.admin-row-estate span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .admin-row-note {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);

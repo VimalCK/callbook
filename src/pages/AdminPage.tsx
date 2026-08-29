@@ -651,6 +651,12 @@ export function AdminPage() {
                   <div className="admin-row-avatar suggestion">{s.name.charAt(0)}</div>
                   <div className="admin-row-content">
                     <div className="admin-row-title">{s.name}</div>
+                    {s.estate_name && (
+                      <div className="admin-row-estate">
+                        <Home size={11} />
+                        <span>{formatSuggestionEstate(s.estate_name)}</span>
+                      </div>
+                    )}
                     <div className="admin-row-meta">
                       <span><Phone size={11} /> {s.phone}</span>
                       <span className="admin-row-cat">{categories.find(c => c.id === s.category)?.name || s.category}</span>
