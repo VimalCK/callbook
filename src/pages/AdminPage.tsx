@@ -245,6 +245,8 @@ export function AdminPage() {
 
   const switchTab = (t: 'providers' | 'suggestions' | 'categories') => {
     setTab(t);
+    setEditingSuggestion(null);
+    setExpandedSuggestion(null);
     fetchData();
   };
   const [token, setToken] = useState<string | null>(localStorage.getItem('callbook_admin_token'));
@@ -415,6 +417,7 @@ export function AdminPage() {
 
   const handleEditSuggestion = (s: SuggestionRow) => {
     setEditingSuggestion(s.id);
+    setExpandedSuggestion(null);
     const meta = s.metadata ? JSON.parse(s.metadata) : {};
     const estate = estates.find(e => e.slug === s.estate_name || e.name === s.estate_name);
     setSuggestionForm({
@@ -621,7 +624,21 @@ export function AdminPage() {
 
       {/* ===== SUGGESTIONS TAB ===== */}
       {tab === 'suggestions' && (
-        <div className="admin-section">
+        <div className="admin-section admin-suggestions-section">
+          {editingSuggestion ? (
+            <div className="admin-suggestion-edit-screen">
+              <div className="admin-form-card admin-suggestion-edit-card">
+                <EditForm
+                  form={suggestionForm}
+                  onChange={handleSuggestionFormChange}
+                  onSubmit={handleSaveSuggestion}
+                  onCancel={() => setEditingSuggestion(null)}
+                  submitLabel="Save"
+                  categories={categories}
+                />
+              </div>
+            </div>
+          ) : (
           <div className="admin-table">
             {pendingSuggestions.map(s => (
               <div key={s.id} className={`admin-suggestion ${expandedSuggestion === s.id ? 'expanded' : ''}`}>
@@ -644,25 +661,6 @@ export function AdminPage() {
                 {/* Expanded */}
                 {expandedSuggestion === s.id && (
                   <div className="admin-suggestion-details">
-                    {editingSuggestion === s.id ? (
-                      <div className="admin-form-card">
-                        <div className="admin-form-header">
-                          <h3>Edit Suggestion</h3>
-                          <button className="admin-icon-btn" onClick={() => setEditingSuggestion(null)}>
-                            <X size={18} />
-                          </button>
-                        </div>
-                        <EditForm
-                          form={suggestionForm}
-                          onChange={handleSuggestionFormChange}
-                          onSubmit={handleSaveSuggestion}
-                          onCancel={() => setEditingSuggestion(null)}
-                          submitLabel="Save"
-                          categories={categories}
-                        />
-                      </div>
-                    ) : (
-                      <>
                         <div className="admin-detail-grid">
                           <div className="admin-detail-item">
                             <Phone size={14} />
@@ -727,8 +725,6 @@ export function AdminPage() {
                             Dismiss
                           </button>
                         </div>
-                      </>
-                    )}
                   </div>
                 )}
               </div>
@@ -741,6 +737,7 @@ export function AdminPage() {
               </div>
             )}
           </div>
+          )}
         </div>
       )}
 
