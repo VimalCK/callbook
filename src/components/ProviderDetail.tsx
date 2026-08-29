@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft, Phone, MessageCircle, MapPin, Clock,
-  BadgeCheck, Share2, Copy, X, Calendar, Star
+  BadgeCheck, Share2, Copy, X, Calendar, Star, Pencil
 } from 'lucide-react';
 
 /* Auto-linkify URLs in text */
@@ -50,10 +50,35 @@ export function ProviderDetail({ provider, categoryName, onBack }: ProviderDetai
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [website, setWebsite] = useState('');
+  const [showEditSuggestion, setShowEditSuggestion] = useState(false);
+  const [editWebsite, setEditWebsite] = useState('');
+  const [editForm, setEditForm] = useState({
+    name: provider.name,
+    business_name: provider.businessName || '',
+    phone: provider.phone,
+    whatsapp: provider.whatsapp || '',
+    category: provider.category,
+    description: provider.description,
+    service_area: provider.serviceArea || '',
+    working_hours: provider.workingHours || '',
+    services: provider.services.join(', '),
+  });
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const displayName = provider.businessName || provider.name;
   const isPending = provider.status === 'pending';
   const categoryLabel = categoryName || provider.category.replace(/-/g, ' ');
+  const hasEditChanges = [
+    editForm.name !== provider.name,
+    editForm.business_name !== (provider.businessName || ''),
+    editForm.phone !== provider.phone,
+    editForm.whatsapp !== (provider.whatsapp || ''),
+    editForm.category !== provider.category,
+    editForm.description !== provider.description,
+    editForm.service_area !== (provider.serviceArea || ''),
+    editForm.working_hours !== (provider.workingHours || ''),
+    editForm.services !== provider.services.join(', '),
+  ].some(Boolean);
 
   const loadFeedback = () => {
     if (isPending) return;
@@ -66,6 +91,21 @@ export function ProviderDetail({ provider, categoryName, onBack }: ProviderDetai
   useEffect(() => {
     loadFeedback();
   }, [provider.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setShowEditSuggestion(false);
+    setEditForm({
+      name: provider.name,
+      business_name: provider.businessName || '',
+      phone: provider.phone,
+      whatsapp: provider.whatsapp || '',
+      category: provider.category,
+      description: provider.description,
+      service_area: provider.serviceArea || '',
+      working_hours: provider.workingHours || '',
+      services: provider.services.join(', '),
+    });
+  }, [provider]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -117,6 +157,44 @@ export function ProviderDetail({ provider, categoryName, onBack }: ProviderDetai
       showToast('No connection. Try later.');
     } finally {
       setIsSubmittingFeedback(false);
+    }
+  };
+
+  const handleEditSuggestionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSuggestionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hasEditChanges) return;
+    setIsSubmittingEdit(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const res = await fetch(`/api/providers/${provider.id}/suggest-edits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...editForm, website: editWebsite }),
+        signal: controller.signal,
+      });
+
+      if (res.ok) {
+        setShowEditSuggestion(false);
+        setEditWebsite('');
+        showToast('Suggested edits sent for review');
+      } else if (res.status === 429) {
+        showToast('Too many suggestions. Try later.');
+      } else {
+        const data = await res.json().catch(() => null);
+        showToast(data?.error || 'Could not submit suggested edits');
+      }
+    } catch {
+      showToast('No connection. Try later.');
+    } finally {
+      window.clearTimeout(timeoutId);
+      setIsSubmittingEdit(false);
     }
   };
 
@@ -193,6 +271,14 @@ export function ProviderDetail({ provider, categoryName, onBack }: ProviderDetai
           </div>
           <span className="detail-action-label">Copy</span>
         </button>
+        {!isPending && (
+          <button className="detail-action-item" onClick={() => setShowEditSuggestion(prev => !prev)}>
+            <div className="detail-action-icon">
+              <Pencil size={20} />
+            </div>
+            <span className="detail-action-label">Edit</span>
+          </button>
+        )}
         <button className="detail-action-item" onClick={handleShare}>
           <div className="detail-action-icon">
             <Share2 size={20} />
@@ -206,6 +292,37 @@ export function ProviderDetail({ provider, categoryName, onBack }: ProviderDetai
         <h2 className="detail-card-title">About</h2>
         <p className="detail-desc"><Linkify text={provider.description} /></p>
       </div>
+
+      {!isPending && showEditSuggestion && <div className="detail-card">
+        <form className="detail-edit-form" onSubmit={handleEditSuggestionSubmit}>
+          <input
+            type="text"
+            name="website"
+            className="detail-honeypot"
+            value={editWebsite}
+            onChange={e => setEditWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+          />
+          <input className="form-control" name="name" value={editForm.name} onChange={handleEditSuggestionChange} placeholder="Person name" />
+          <input className="form-control" name="business_name" value={editForm.business_name} onChange={handleEditSuggestionChange} placeholder="Business name" />
+          <input className="form-control" name="phone" value={editForm.phone} onChange={handleEditSuggestionChange} placeholder="Phone" />
+          <input className="form-control" name="whatsapp" value={editForm.whatsapp} onChange={handleEditSuggestionChange} placeholder="WhatsApp" />
+          <input className="form-control" name="service_area" value={editForm.service_area} onChange={handleEditSuggestionChange} placeholder="Service area" />
+          <input className="form-control" name="working_hours" value={editForm.working_hours} onChange={handleEditSuggestionChange} placeholder="Working hours" />
+          <textarea className="form-control form-textarea" name="description" value={editForm.description} onChange={handleEditSuggestionChange} rows={3} placeholder="Description or notes" />
+          <input className="form-control" name="services" value={editForm.services} onChange={handleEditSuggestionChange} placeholder="Services, comma separated" />
+          <div className="detail-edit-actions">
+            <button type="button" className="detail-edit-cancel" onClick={() => setShowEditSuggestion(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="detail-feedback-submit" disabled={isSubmittingEdit || !hasEditChanges}>
+              {isSubmittingEdit ? 'Submitting...' : 'Submit suggested edits'}
+            </button>
+          </div>
+        </form>
+      </div>}
 
       {/* Contact & info */}
       <div className="detail-card">

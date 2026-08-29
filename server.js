@@ -228,6 +228,119 @@ function sendContactAlreadyExists(res) {
   return res.status(409).json({ error: 'Contact already exists in this estate.' });
 }
 
+function parseSuggestedEdits(value) {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+function normalizeComparableValue(value) {
+  if (Array.isArray(value)) return value.map(item => String(item).trim()).filter(Boolean).join(', ');
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (value == null) return '';
+  return String(value).trim();
+}
+
+function getProviderComparableValue(provider, field) {
+  if (field === 'services') return JSON.parse(provider.services || '[]').join(', ');
+  if (field === 'is_verified') return Boolean(provider.is_verified) ? 'true' : 'false';
+  return normalizeComparableValue(provider[field]);
+}
+
+function getCleanSuggestedEditValue(field, value) {
+  if (field === 'is_verified') return Boolean(value);
+  if (field === 'services') return cleanText(Array.isArray(value) ? value.join(', ') : value, 300);
+
+  const maxLengths = {
+    name: 100,
+    business_name: 100,
+    category: 50,
+    description: 500,
+    phone: 30,
+    whatsapp: 30,
+    service_area: 120,
+    working_hours: 120,
+  };
+
+  return cleanText(value, maxLengths[field] || 120);
+}
+
+function hasInvalidSuggestedEditValue(field, value) {
+  if (field === 'is_verified') return false;
+  if (field === 'services') return hasInvalidText(Array.isArray(value) ? value.join(', ') : value, 300);
+
+  const maxLengths = {
+    name: 100,
+    business_name: 100,
+    category: 50,
+    description: 500,
+    phone: 30,
+    whatsapp: 30,
+    service_area: 120,
+    working_hours: 120,
+  };
+
+  return hasInvalidText(value, maxLengths[field] || 120);
+}
+
+function buildSuggestedEditsFromBody(body) {
+  const fields = ['name', 'business_name', 'category', 'description', 'phone', 'whatsapp', 'service_area', 'working_hours', 'services', 'is_verified'];
+  const edits = {};
+
+  for (const field of fields) {
+    if (!Object.prototype.hasOwnProperty.call(body, field)) continue;
+    if (hasInvalidSuggestedEditValue(field, body[field])) {
+      return { error: 'Some fields are too long or contain invalid characters.' };
+    }
+
+    const value = getCleanSuggestedEditValue(field, body[field]);
+    if (field !== 'is_verified' && !normalizeComparableValue(value)) continue;
+    edits[field] = value;
+  }
+
+  return { edits };
+}
+
+function mergeSuggestedEdits(provider, nextEdits) {
+  const merged = { ...parseSuggestedEdits(provider.suggested_edits), ...nextEdits };
+
+  for (const [field, value] of Object.entries(merged)) {
+    if (normalizeComparableValue(value) === getProviderComparableValue(provider, field)) {
+      delete merged[field];
+    }
+  }
+
+  return Object.keys(merged).length > 0 ? JSON.stringify(merged) : null;
+}
+
+function applySuggestedEdits(provider) {
+  const edits = parseSuggestedEdits(provider.suggested_edits);
+  if (Object.keys(edits).length === 0) return null;
+
+  return {
+    estate_id: provider.estate_id,
+    name: Object.prototype.hasOwnProperty.call(edits, 'name') ? edits.name : provider.name,
+    business_name: Object.prototype.hasOwnProperty.call(edits, 'business_name') ? edits.business_name || null : provider.business_name,
+    category: Object.prototype.hasOwnProperty.call(edits, 'category') ? edits.category : provider.category,
+    description: Object.prototype.hasOwnProperty.call(edits, 'description') ? edits.description || '' : provider.description,
+    phone: Object.prototype.hasOwnProperty.call(edits, 'phone') ? edits.phone : provider.phone,
+    whatsapp: Object.prototype.hasOwnProperty.call(edits, 'whatsapp') ? edits.whatsapp || null : provider.whatsapp,
+    service_area: Object.prototype.hasOwnProperty.call(edits, 'service_area') ? edits.service_area || null : provider.service_area,
+    address: provider.address,
+    working_hours: Object.prototype.hasOwnProperty.call(edits, 'working_hours') ? edits.working_hours || null : provider.working_hours,
+    image: provider.image,
+    is_verified: Object.prototype.hasOwnProperty.call(edits, 'is_verified') ? (edits.is_verified ? 1 : 0) : provider.is_verified,
+    services: Object.prototype.hasOwnProperty.call(edits, 'services')
+      ? JSON.stringify(String(edits.services || '').split(',').map(s => s.trim()).filter(Boolean))
+      : provider.services,
+  };
+}
+
 function hasInvalidText(value, maxLength) {
   if (value == null) return false;
   return typeof value !== 'string' || value.length > maxLength || /[\u0000-\u001f\u007f]/.test(value);
@@ -390,6 +503,50 @@ app.post('/api/providers/:id/feedback', (req, res) => {
   res.status(201).json({ id: result.lastInsertRowid, status: 'submitted' });
 });
 
+app.post('/api/providers/:id/suggest-edits', async (req, res) => {
+  try {
+    const rateLimit = checkSuggestionRateLimit(req);
+    if (!rateLimit.allowed) {
+      res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+      return res.status(429).json({ error: 'Too many suggestions. Please try again later.' });
+    }
+
+    if (cleanText(req.body.website, 200)) {
+      return res.status(400).json({ error: 'Invalid submission' });
+    }
+
+    const provider = db.prepare("SELECT * FROM providers WHERE id = ? AND status = 'approved'").get(req.params.id);
+    if (!provider) return res.status(404).json({ error: 'Provider not found' });
+
+    const { edits, error } = buildSuggestedEditsFromBody(req.body);
+    if (error) return res.status(400).json({ error });
+    if (!edits || Object.keys(edits).length === 0) {
+      return res.status(400).json({ error: 'No suggested changes provided.' });
+    }
+
+    const suggestedEdits = mergeSuggestedEdits(provider, edits);
+    if (!suggestedEdits) {
+      db.prepare("UPDATE providers SET suggested_edits = NULL, updated_at = datetime('now') WHERE id = ?").run(req.params.id);
+      return res.json({ success: true, status: 'unchanged' });
+    }
+
+    db.prepare("UPDATE providers SET suggested_edits = ?, updated_at = datetime('now') WHERE id = ?").run(suggestedEdits, req.params.id);
+    res.status(201).json({ id: provider.id, status: 'suggested' });
+
+    notifySuggestionSubmitted({
+      name: provider.name,
+      phone: edits.phone || provider.phone,
+      category: edits.category || provider.category,
+      service_area: edits.service_area || provider.service_area,
+      note: edits.description || 'Suggested edit for existing provider',
+      estate: provider.estate_id,
+    });
+  } catch (err) {
+    console.error('Failed to submit suggested edits:', err);
+    res.status(500).json({ error: 'Could not submit suggested edits' });
+  }
+});
+
 // Categories — with counts filtered by estate
 app.get('/api/categories', (req, res) => {
   const estateSlug = req.query.estate;
@@ -540,13 +697,14 @@ app.get('/api/suggestions', (req, res) => {
         providers.is_verified,
         providers.services,
         providers.status,
+        providers.suggested_edits,
         providers.created_at AS submitted_at,
         estates.slug AS estate_slug,
         estates.name AS estate_name,
         estates.description AS estate_description
       FROM providers
       LEFT JOIN estates ON estates.id = providers.estate_id
-      WHERE providers.estate_id = ? AND providers.status = 'pending'
+      WHERE providers.estate_id = ? AND (providers.status = 'pending' OR providers.suggested_edits IS NOT NULL)
       ORDER BY providers.created_at DESC
     `).all(estateId);
   } else {
@@ -559,13 +717,14 @@ app.get('/api/suggestions', (req, res) => {
         providers.is_verified,
         providers.services,
         providers.status,
+        providers.suggested_edits,
         providers.created_at AS submitted_at,
         estates.slug AS estate_slug,
         estates.name AS estate_name,
         estates.description AS estate_description
       FROM providers
       LEFT JOIN estates ON estates.id = providers.estate_id
-      WHERE providers.status = 'pending'
+      WHERE providers.status = 'pending' OR providers.suggested_edits IS NOT NULL
       ORDER BY providers.created_at DESC
     `).all();
   }
@@ -578,6 +737,7 @@ app.get('/api/suggestions', (req, res) => {
       is_verified: Boolean(row.is_verified),
       services: JSON.parse(row.services || '[]').join(', '),
     }),
+    suggested_edits: parseSuggestedEdits(row.suggested_edits),
     estate_name: [row.estate_name, row.estate_description].filter(Boolean).join(', '),
   })));
 });
@@ -677,16 +837,44 @@ app.delete('/api/admin/estates/:id', requireAdmin, (req, res) => {
 });
 
 app.delete('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
-  db.prepare("DELETE FROM providers WHERE id = ? AND status = 'pending'").run(req.params.id);
+  const provider = db.prepare('SELECT id, status, suggested_edits FROM providers WHERE id = ?').get(req.params.id);
+  if (!provider || (provider.status !== 'pending' && !provider.suggested_edits)) return res.status(404).json({ error: 'Not found' });
+
+  if (provider.status === 'pending') {
+    db.prepare("DELETE FROM providers WHERE id = ? AND status = 'pending'").run(req.params.id);
+  } else {
+    db.prepare("UPDATE providers SET suggested_edits = NULL, updated_at = datetime('now') WHERE id = ?").run(req.params.id);
+  }
+
   res.json({ success: true });
 });
 
 app.put('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
   const { name, phone, category, service_area, note, estate_name, business_name, whatsapp, working_hours, services, is_verified } = req.body;
-  const existing = db.prepare("SELECT id, estate_id FROM providers WHERE id = ? AND status = 'pending'").get(req.params.id);
+  const existing = db.prepare("SELECT * FROM providers WHERE id = ? AND (status = 'pending' OR suggested_edits IS NOT NULL)").get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
   const estateId = resolveEstateId(estate_name) || existing.estate_id;
   try {
+    if (existing.status !== 'pending') {
+      const { edits, error } = buildSuggestedEditsFromBody({
+        name,
+        business_name,
+        category,
+        description: note,
+        phone,
+        whatsapp,
+        service_area,
+        working_hours,
+        services,
+        is_verified,
+      });
+      if (error) return res.status(400).json({ error });
+
+      const suggestedEdits = mergeSuggestedEdits(existing, edits || {});
+      db.prepare("UPDATE providers SET suggested_edits = ?, updated_at = datetime('now') WHERE id = ?").run(suggestedEdits, req.params.id);
+      return res.json({ success: true, estate_id: existing.estate_id });
+    }
+
     db.prepare(`
       UPDATE providers SET estate_id = ?, name = ?, business_name = ?, category = ?, description = ?, phone = ?, phone_normalized = ?, whatsapp = ?,
         service_area = ?, working_hours = ?, is_verified = ?, services = ?, updated_at = datetime('now')
@@ -700,11 +888,23 @@ app.put('/api/admin/suggestions/:id', requireAdmin, (req, res) => {
 });
 
 app.post('/api/admin/suggestions/:id/approve', requireAdmin, (req, res) => {
-  const suggestion = db.prepare("SELECT providers.*, estates.name AS estate_name, estates.description AS estate_description FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ? AND providers.status = 'pending'").get(req.params.id);
+  const suggestion = db.prepare("SELECT providers.*, estates.name AS estate_name, estates.description AS estate_description FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ? AND (providers.status = 'pending' OR providers.suggested_edits IS NOT NULL)").get(req.params.id);
   if (!suggestion) return res.status(404).json({ error: 'Not found' });
 
   try {
-    db.prepare("UPDATE providers SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND status = 'pending'").run(req.params.id);
+    if (suggestion.status === 'pending') {
+      db.prepare("UPDATE providers SET status = 'approved', suggested_edits = NULL, updated_at = datetime('now') WHERE id = ? AND status = 'pending'").run(req.params.id);
+    } else {
+      const updated = applySuggestedEdits(suggestion);
+      if (!updated) return res.status(400).json({ error: 'No suggested edits to approve.' });
+
+      db.prepare(`
+        UPDATE providers SET estate_id = ?, name = ?, business_name = ?, category = ?, description = ?, phone = ?, phone_normalized = ?, whatsapp = ?,
+          service_area = ?, address = ?, working_hours = ?, image = ?, is_verified = ?, services = ?, suggested_edits = NULL, updated_at = datetime('now')
+        WHERE id = ?
+      `).run(updated.estate_id, updated.name, updated.business_name, updated.category, updated.description, updated.phone, normalizePhone(updated.phone), updated.whatsapp, updated.service_area, updated.address, updated.working_hours, updated.image, updated.is_verified, updated.services, req.params.id);
+    }
+
     res.json({ success: true, estate_id: suggestion.estate_id });
   } catch (err) {
     if (isContactAlreadyExistsError(err)) return sendContactAlreadyExists(res);

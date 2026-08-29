@@ -25,14 +25,18 @@ interface ProviderRow {
 interface SuggestionRow {
   id: number;
   name: string;
+  business_name: string | null;
   phone: string;
+  whatsapp: string | null;
   category: string;
   service_area: string | null;
+  working_hours: string | null;
   note: string | null;
   estate_name: string | null;
   metadata: string | null;
   status: string;
   submitted_at: string;
+  suggested_edits?: Record<string, string | boolean>;
 }
 
 interface CategoryRow {
@@ -455,16 +459,16 @@ export function AdminPage() {
     const meta = s.metadata ? JSON.parse(s.metadata) : {};
     const estate = estates.find(e => e.slug === s.estate_name || e.name === s.estate_name);
     setSuggestionForm({
-      name: s.name,
-      business_name: meta.business_name || '',
-      category: s.category,
-      description: s.note || '',
-      phone: s.phone,
-      whatsapp: meta.whatsapp || '',
-      service_area: s.service_area || '',
-      working_hours: meta.working_hours || '',
-      is_verified: meta.is_verified || false,
-      services: meta.services || '',
+      name: String(getSuggestedValue(s, 'name') || ''),
+      business_name: String(getSuggestedValue(s, 'business_name') || meta.business_name || ''),
+      category: String(getSuggestedValue(s, 'category') || ''),
+      description: String(getSuggestedValue(s, 'description') || ''),
+      phone: String(getSuggestedValue(s, 'phone') || ''),
+      whatsapp: String(getSuggestedValue(s, 'whatsapp') || meta.whatsapp || ''),
+      service_area: String(getSuggestedValue(s, 'service_area') || ''),
+      working_hours: String(getSuggestedValue(s, 'working_hours') || meta.working_hours || ''),
+      is_verified: Boolean(getSuggestedValue(s, 'is_verified') ?? meta.is_verified),
+      services: String(getSuggestedValue(s, 'services') || meta.services || ''),
       estate_name: estate ? [estate.name, estate.description].filter(Boolean).join(', ') : s.estate_name || '',
     });
   };
@@ -474,6 +478,24 @@ export function AdminPage() {
     const estate = estates.find(e => e.slug === estateName || e.name === estateName);
     return estate ? [estate.name, estate.description].filter(Boolean).join(', ') : estateName;
   };
+
+  const getSuggestedValue = (s: SuggestionRow, field: string) => {
+    if (s.suggested_edits && Object.prototype.hasOwnProperty.call(s.suggested_edits, field)) {
+      return s.suggested_edits[field];
+    }
+    if (field === 'description') return s.note;
+    return s[field as keyof SuggestionRow] as string | boolean | null | undefined;
+  };
+
+  const hasSuggestedEdit = (s: SuggestionRow, field: string) => Boolean(s.suggested_edits && Object.prototype.hasOwnProperty.call(s.suggested_edits, field));
+
+  const hasSuggestedEdits = (s: SuggestionRow) => Boolean(s.suggested_edits && Object.keys(s.suggested_edits).length > 0);
+
+  const renderSuggestionValue = (s: SuggestionRow, field: string, value: string | boolean | null | undefined) => (
+    <span className={`admin-detail-value ${hasSuggestedEdit(s, field) ? 'suggested-edit-highlight' : ''}`}>
+      {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value || '-'}
+    </span>
+  );
 
   const handleSaveSuggestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -505,7 +527,7 @@ export function AdminPage() {
     }
   };
 
-  const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
+  const pendingSuggestions = suggestions.filter(s => s.status === 'pending' || hasSuggestedEdits(s));
 
   const selectedEstateProviders = estateFilter
     ? providers.filter(p => p.estate_id === Number(estateFilter))
@@ -695,7 +717,10 @@ export function AdminPage() {
                 >
                   <div className="admin-row-avatar suggestion">{s.name.charAt(0)}</div>
                   <div className="admin-row-content">
-                    <div className="admin-row-title">{s.name}</div>
+                    <div className="admin-row-title">
+                      {String(getSuggestedValue(s, 'name') || s.name)}
+                      {hasSuggestedEdits(s) && <span className="admin-suggested-edit-badge">Suggested edit</span>}
+                    </div>
                     {s.estate_name && (
                       <div className="admin-row-estate">
                         <Home size={11} />
@@ -703,8 +728,8 @@ export function AdminPage() {
                       </div>
                     )}
                     <div className="admin-row-meta">
-                      <span><Phone size={11} /> {s.phone}</span>
-                      <span className="admin-row-cat">{categories.find(c => c.id === s.category)?.name || s.category}</span>
+                      <span><Phone size={11} /> {String(getSuggestedValue(s, 'phone') || s.phone)}</span>
+                      <span className="admin-row-cat">{categories.find(c => c.id === String(getSuggestedValue(s, 'category') || s.category))?.name || String(getSuggestedValue(s, 'category') || s.category)}</span>
                     </div>
                   </div>
                   <ChevronDown size={16} className={`admin-suggestion-chevron ${expandedSuggestion === s.id ? 'rotated' : ''}`} />
@@ -718,25 +743,30 @@ export function AdminPage() {
                             <Phone size={14} />
                             <div>
                               <span className="admin-detail-label">Phone</span>
-                              <span className="admin-detail-value">{s.phone}</span>
+                              {renderSuggestionValue(s, 'phone', getSuggestedValue(s, 'phone'))}
+                            </div>
+                          </div>
+                          <div className="admin-detail-item">
+                            <MessageSquare size={14} />
+                            <div>
+                              <span className="admin-detail-label">WhatsApp</span>
+                              {renderSuggestionValue(s, 'whatsapp', getSuggestedValue(s, 'whatsapp'))}
                             </div>
                           </div>
                           <div className="admin-detail-item">
                             <Users size={14} />
                             <div>
                               <span className="admin-detail-label">Category</span>
-                              <span className="admin-detail-value">{categories.find(c => c.id === s.category)?.name || s.category}</span>
+                              {renderSuggestionValue(s, 'category', categories.find(c => c.id === String(getSuggestedValue(s, 'category') || s.category))?.name || String(getSuggestedValue(s, 'category') || s.category))}
                             </div>
                           </div>
-                          {s.service_area && (
-                            <div className="admin-detail-item">
-                              <MapPin size={14} />
-                              <div>
-                                <span className="admin-detail-label">Service area</span>
-                                <span className="admin-detail-value">{s.service_area}</span>
-                              </div>
+                          <div className="admin-detail-item">
+                            <MapPin size={14} />
+                            <div>
+                              <span className="admin-detail-label">Service area</span>
+                              {renderSuggestionValue(s, 'service_area', getSuggestedValue(s, 'service_area'))}
                             </div>
-                          )}
+                          </div>
                           {s.estate_name && (
                             <div className="admin-detail-item">
                               <Home size={14} />
@@ -746,15 +776,20 @@ export function AdminPage() {
                               </div>
                             </div>
                           )}
-                          {s.note && (
-                            <div className="admin-detail-item">
-                              <MessageSquare size={14} />
-                              <div>
-                                <span className="admin-detail-label">Notes</span>
-                                <span className="admin-detail-value">{s.note}</span>
-                              </div>
+                          <div className="admin-detail-item">
+                            <Clock size={14} />
+                            <div>
+                              <span className="admin-detail-label">Working hours</span>
+                              {renderSuggestionValue(s, 'working_hours', getSuggestedValue(s, 'working_hours'))}
                             </div>
-                          )}
+                          </div>
+                          <div className="admin-detail-item">
+                            <MessageSquare size={14} />
+                            <div>
+                              <span className="admin-detail-label">Notes</span>
+                              {renderSuggestionValue(s, 'description', getSuggestedValue(s, 'description'))}
+                            </div>
+                          </div>
                           <div className="admin-detail-item">
                             <Clock size={14} />
                             <div>
