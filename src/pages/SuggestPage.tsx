@@ -194,6 +194,7 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
           aria-hidden="true"
         />
         <div className="suggest-field">
+          <label htmlFor="s-estate">Estate, location <span className="req">*</span></label>
           <input
             id="s-estate"
             name="estate"
@@ -201,7 +202,7 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
             className="suggest-estate-input form-control"
             value={estateInput}
             onChange={e => setEstateInput(e.target.value)}
-            placeholder="Estate, location *"
+            placeholder="e.g. Ballymakenny Park, Drogheda"
             aria-label="Estate, location"
             autoComplete="off"
             disabled={Boolean(estate)}
@@ -211,26 +212,31 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
 
         <div className="suggest-field-row">
           <div className="suggest-field">
-              <input className="form-control" id="s-name" name="name" value={form.name} onChange={handleChange} required placeholder="Person name *" aria-label="Person name" />
+            <label htmlFor="s-name">Person name <span className="req">*</span></label>
+            <input className="form-control" id="s-name" name="name" value={form.name} onChange={handleChange} required placeholder="e.g. John Murphy" aria-label="Person name" />
           </div>
 
           <div className="suggest-field">
-            <input className="form-control" id="s-business" name="business_name" value={form.business_name} onChange={handleChange} placeholder="Business name" aria-label="Business name" />
-          </div>
-        </div>
-
-        <div className="suggest-field-row">
-          <div className="suggest-field">
-            <input className="form-control" id="s-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required placeholder="Phone number *" aria-label="Phone number" />
-          </div>
-
-          <div className="suggest-field">
-            <input className="form-control" id="s-whatsapp" name="whatsapp" type="tel" value={form.whatsapp} onChange={handleChange} placeholder="WhatsApp number" aria-label="WhatsApp number" />
+            <label htmlFor="s-business">Business name</label>
+            <input className="form-control" id="s-business" name="business_name" value={form.business_name} onChange={handleChange} placeholder="e.g. Murphy Plumbing" aria-label="Business name" />
           </div>
         </div>
 
         <div className="suggest-field-row">
           <div className="suggest-field">
+            <label htmlFor="s-phone">Phone number <span className="req">*</span></label>
+            <input className="form-control" id="s-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required placeholder="+353 87 123 4567" aria-label="Phone number" />
+          </div>
+
+          <div className="suggest-field">
+            <label htmlFor="s-whatsapp">WhatsApp number</label>
+            <input className="form-control" id="s-whatsapp" name="whatsapp" type="tel" value={form.whatsapp} onChange={handleChange} placeholder="+353 87 123 4567" aria-label="WhatsApp number" />
+          </div>
+        </div>
+
+        <div className="suggest-field-row">
+          <div className="suggest-field">
+            <label>Service category <span className="req">*</span></label>
             <CategoryDropdown
               value={form.category}
               onChange={handleCategoryChange}
@@ -239,20 +245,24 @@ export function SuggestPage({ estate, onSubmitted }: SuggestPageProps) {
           </div>
 
           <div className="suggest-field">
-            <input className="form-control" id="s-area" name="service_area" value={form.service_area} onChange={handleChange} placeholder="Service area" aria-label="Service area" />
+            <label htmlFor="s-area">Service area</label>
+            <input className="form-control" id="s-area" name="service_area" value={form.service_area} onChange={handleChange} placeholder="e.g. Drogheda" aria-label="Service area" />
           </div>
         </div>
 
         <div className="suggest-field">
-          <input className="form-control" id="s-hours" name="working_hours" value={form.working_hours} onChange={handleChange} placeholder="Working hours" aria-label="Working hours" />
+          <label htmlFor="s-hours">Working hours</label>
+          <input className="form-control" id="s-hours" name="working_hours" value={form.working_hours} onChange={handleChange} placeholder="e.g. Mon-Sat, 9 AM - 6 PM" aria-label="Working hours" />
         </div>
 
         <div className="suggest-field">
-          <textarea className="form-control form-textarea" id="s-note" name="note" value={form.note} onChange={handleChange} rows={3} placeholder="Additional notes" aria-label="Additional notes" />
+          <label htmlFor="s-note">Additional notes</label>
+          <textarea className="form-control form-textarea" id="s-note" name="note" value={form.note} onChange={handleChange} rows={3} placeholder="Brief description of services..." aria-label="Additional notes" />
         </div>
 
         <div className="suggest-field">
-          <input className="form-control" id="s-services" name="services" value={form.services} onChange={handleChange} placeholder="Services" aria-label="Services" />
+          <label htmlFor="s-services">Services</label>
+          <input className="form-control" id="s-services" name="services" value={form.services} onChange={handleChange} placeholder="Pipe repair, Leak fixing, Bathroom fitting" aria-label="Services" />
         </div>
 
         <div className="suggest-field">
