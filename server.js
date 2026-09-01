@@ -16,6 +16,9 @@ const suggestionRateLimits = new Map();
 const FEEDBACK_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const FEEDBACK_RATE_LIMIT_MAX = 10;
 const feedbackRateLimits = new Map();
+const APP_FEEDBACK_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const APP_FEEDBACK_RATE_LIMIT_MAX = 5;
+const appFeedbackRateLimits = new Map();
 
 // Database setup
 const bundledDbPath = join(__dirname, 'lokall.db');
@@ -71,6 +74,15 @@ db.exec(`
     provider_id INTEGER NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
     rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS app_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    feedback_type TEXT NOT NULL DEFAULT 'other',
+    message TEXT NOT NULL,
+    contact TEXT,
+    page_context TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -536,6 +548,33 @@ app.post('/api/analytics/search', (req, res) => {
   res.status(201).json({ success: true });
 });
 
+app.post('/api/app-feedback', (req, res) => {
+  const rateLimit = checkRateLimit(appFeedbackRateLimits, req, APP_FEEDBACK_RATE_LIMIT_MAX, APP_FEEDBACK_RATE_LIMIT_WINDOW_MS);
+  if (!rateLimit.allowed) {
+    return res.status(429).json({ error: 'Too many feedback submissions. Please try later.', retry_after_seconds: rateLimit.retryAfterSeconds });
+  }
+
+  if (cleanText(req.body.website, 200)) {
+    return res.status(201).json({ success: true });
+  }
+
+  const allowedTypes = new Set(['issue', 'feature', 'correction', 'other']);
+  const feedbackType = cleanText(req.body.feedback_type, 30).toLowerCase();
+  const message = cleanText(req.body.message, 1000);
+  const contact = cleanText(req.body.contact, 120) || null;
+  const pageContext = cleanText(req.body.page_context, 200) || null;
+
+  if (!allowedTypes.has(feedbackType)) return res.status(400).json({ error: 'Invalid feedback type' });
+  if (message.length < 5) return res.status(400).json({ error: 'Please enter a short message' });
+
+  db.prepare(`
+    INSERT INTO app_feedback (feedback_type, message, contact, page_context)
+    VALUES (?, ?, ?, ?)
+  `).run(feedbackType, message, contact, pageContext);
+
+  res.status(201).json({ success: true });
+});
+
 app.post('/api/providers/:id/feedback', (req, res) => {
   const rateLimit = checkRateLimit(feedbackRateLimits, req, FEEDBACK_RATE_LIMIT_MAX, FEEDBACK_RATE_LIMIT_WINDOW_MS);
   if (!rateLimit.allowed) {
@@ -889,6 +928,21 @@ app.get('/api/admin/providers/:id/feedback', requireAdmin, (req, res) => {
 
 app.delete('/api/admin/feedback/:id', requireAdmin, (req, res) => {
   const result = db.prepare('DELETE FROM provider_feedback WHERE id = ?').run(req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Feedback not found' });
+  res.json({ success: true });
+});
+
+app.get('/api/admin/app-feedback', requireAdmin, (req, res) => {
+  const rows = db.prepare(`
+    SELECT id, feedback_type, message, contact, page_context, created_at
+    FROM app_feedback
+    ORDER BY created_at DESC, id DESC
+  `).all();
+  res.json(rows);
+});
+
+app.delete('/api/admin/app-feedback/:id', requireAdmin, (req, res) => {
+  const result = db.prepare('DELETE FROM app_feedback WHERE id = ?').run(req.params.id);
   if (result.changes === 0) return res.status(404).json({ error: 'Feedback not found' });
   res.json({ success: true });
 });

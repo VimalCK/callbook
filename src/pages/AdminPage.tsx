@@ -29,6 +29,15 @@ interface FeedbackRow {
   created_at: string;
 }
 
+interface AppFeedbackRow {
+  id: number;
+  feedback_type: string;
+  message: string;
+  contact: string | null;
+  page_context: string | null;
+  created_at: string;
+}
+
 interface SuggestionRow {
   id: number;
   name: string;
@@ -310,6 +319,7 @@ function EstateFilterDropdown({ estates, providers, value, onChange }: {
 export function AdminPage() {
   const [providers, setProviders] = useState<ProviderRow[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionRow[]>([]);
+  const [appFeedback, setAppFeedback] = useState<AppFeedbackRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [estates, setEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData>(EMPTY_ANALYTICS);
@@ -320,7 +330,7 @@ export function AdminPage() {
   const [providerFeedback, setProviderFeedback] = useState<FeedbackRow[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [message, setMessage] = useState('');
-  const [tab, setTab] = useState<'providers' | 'suggestions' | 'categories' | 'analytics'>('providers');
+  const [tab, setTab] = useState<'providers' | 'suggestions' | 'categories' | 'analytics' | 'feedback'>('providers');
   const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(null);
   const [editingSuggestion, setEditingSuggestion] = useState<number | null>(null);
   const [suggestionForm, setSuggestionForm] = useState(EMPTY_FORM);
@@ -331,7 +341,7 @@ export function AdminPage() {
   const [editCatDesc, setEditCatDesc] = useState('');
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
-  const switchTab = (t: 'providers' | 'suggestions' | 'categories' | 'analytics') => {
+  const switchTab = (t: 'providers' | 'suggestions' | 'categories' | 'analytics' | 'feedback') => {
     setTab(t);
     setShowForm(false);
     setEditingId(null);
@@ -374,18 +384,20 @@ export function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [pRes, sRes, eRes, cRes, aRes] = await Promise.all([
+      const [pRes, sRes, eRes, cRes, aRes, fRes] = await Promise.all([
         fetch('/api/providers', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/suggestions', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/estates'),
         fetch('/api/categories'),
         fetch('/api/admin/analytics', { headers: { 'x-admin-token': token || '' } }),
+        fetch('/api/admin/app-feedback', { headers: { 'x-admin-token': token || '' } }),
       ]);
-      if ([pRes, sRes, eRes, cRes, aRes].some(handleUnauthorized)) return;
+      if ([pRes, sRes, eRes, cRes, aRes, fRes].some(handleUnauthorized)) return;
       if (pRes.ok) setProviders(await pRes.json());
       if (sRes.ok) setSuggestions(await sRes.json());
       if (eRes.ok) setEstates(await eRes.json());
       if (aRes.ok) setAnalytics(await aRes.json());
+      if (fRes.ok) setAppFeedback(await fRes.json());
       if (cRes.ok) {
         const cats = await cRes.json();
         setCategories(cats.sort((a: CategoryRow, b: CategoryRow) => a.name.localeCompare(b.name)));
@@ -504,6 +516,23 @@ export function AdminPage() {
         if (res.ok) {
           flash('Feedback deleted');
           setProviderFeedback(prev => prev.filter(item => item.id !== feedbackId));
+        } else {
+          flash('Error deleting feedback');
+        }
+      },
+    });
+  };
+
+  const handleDeleteAppFeedback = (feedbackId: number) => {
+    setConfirmDialog({
+      message: 'Delete this app feedback permanently?',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const res = await fetch(`/api/admin/app-feedback/${feedbackId}`, { method: 'DELETE', headers: authHeaders });
+        if (handleUnauthorized(res)) return;
+        if (res.ok) {
+          flash('Feedback deleted');
+          setAppFeedback(prev => prev.filter(item => item.id !== feedbackId));
         } else {
           flash('Error deleting feedback');
         }
@@ -716,7 +745,7 @@ export function AdminPage() {
       <div className="admin-tab-bar">
         <button className={`admin-tab ${tab === 'providers' ? 'active' : ''}`} onClick={() => switchTab('providers')}>
           <Users size={20} strokeWidth={tab === 'providers' ? 2.2 : 1.8} />
-          <span>Service Providers</span>
+          <span>Providers</span>
           <span className="admin-tab-badge">{providers.length}</span>
         </button>
         <button className={`admin-tab ${tab === 'suggestions' ? 'active' : ''}`} onClick={() => switchTab('suggestions')}>
@@ -732,6 +761,11 @@ export function AdminPage() {
         <button className={`admin-tab ${tab === 'analytics' ? 'active' : ''}`} onClick={() => switchTab('analytics')}>
           <BarChart3 size={20} strokeWidth={tab === 'analytics' ? 2.2 : 1.8} />
           <span>Analytics</span>
+        </button>
+        <button className={`admin-tab ${tab === 'feedback' ? 'active' : ''}`} onClick={() => switchTab('feedback')}>
+          <MessageSquare size={20} strokeWidth={tab === 'feedback' ? 2.2 : 1.8} />
+          <span>Feedback</span>
+          {appFeedback.length > 0 && <span className="admin-tab-badge">{appFeedback.length}</span>}
         </button>
       </div>
 
@@ -1243,6 +1277,37 @@ export function AdminPage() {
                 )}
               </div>
             </section>
+          </div>
+        </div>
+      )}
+
+      {/* ===== FEEDBACK TAB ===== */}
+      {tab === 'feedback' && (
+        <div className="admin-section admin-app-feedback-section">
+          <div className="admin-app-feedback-list">
+            {appFeedback.map(item => (
+              <div key={item.id} className="admin-app-feedback-card">
+                <div className="admin-app-feedback-header">
+                  <span className="admin-app-feedback-type">{item.feedback_type.replace(/-/g, ' ')}</span>
+                  <button className="admin-icon-btn danger" onClick={() => handleDeleteAppFeedback(item.id)} aria-label="Delete app feedback">
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+                <p className="admin-app-feedback-message">{item.message}</p>
+                <div className="admin-app-feedback-meta">
+                  {item.contact && <span>Contact: {item.contact}</span>}
+                  {item.page_context && item.page_context !== '/' && <span>Page: {item.page_context}</span>}
+                  <span>{new Date(item.created_at).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            ))}
+            {appFeedback.length === 0 && (
+              <div className="admin-empty">
+                <MessageSquare size={24} />
+                <p>No app feedback yet</p>
+                <span>User feedback and feature requests will appear here</span>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -20,6 +20,18 @@ function Linkify({ text }: { text: string }) {
     </>
   );
 }
+
+function AboutText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(',').map(part => part.trim()).filter(Boolean).map((part, index) => (
+        <span key={`${part}-${index}`} className="detail-desc-line">
+          <Linkify text={part} />
+        </span>
+      ))}
+    </>
+  );
+}
 import type { Provider } from '../types/provider';
 import { getCallUrl, getWhatsAppUrl, shareProvider, copyPhone } from '../utils/share';
 import { getInitials } from '../utils/initials';
@@ -290,7 +302,7 @@ export function ProviderDetail({ provider, categoryName, onBack }: ProviderDetai
       {/* Description */}
       <div className="detail-card">
         <h2 className="detail-card-title">About</h2>
-        <p className="detail-desc"><Linkify text={provider.description} /></p>
+        <p className="detail-desc"><AboutText text={provider.description} /></p>
       </div>
 
       {!isPending && showEditSuggestion && <div className="detail-card">

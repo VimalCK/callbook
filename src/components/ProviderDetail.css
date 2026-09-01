@@ -232,6 +232,10 @@
   white-space: pre-line;
 }
 
+.detail-desc-line {
+  display: block;
+}
+
 .detail-edit-form {
   display: flex;
   flex-direction: column;

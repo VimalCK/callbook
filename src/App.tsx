@@ -51,6 +51,7 @@ export default function App() {
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [estate, setEstate] = useState<string | null>(getSelectedEstate());
   const [estateName, setEstateName] = useState<string>('');
+  const [focusFeedback, setFocusFeedback] = useState(false);
   const [approvedSuggestions, setApprovedSuggestions] = useState<SuggestionStatus[]>([]);
   const { providers, categories, isLoading, error, refetch } = useProviders(estate);
 
@@ -200,6 +201,12 @@ export default function App() {
     setSelectedProvider(null);
   }, []);
 
+  const handleOpenFeedback = useCallback(() => {
+    setSelectedProvider(null);
+    setTab('about');
+    setFocusFeedback(true);
+  }, []);
+
   // Admin page — full screen, no estate filter needed
   if (tab === 'admin') {
     return (
@@ -251,7 +258,7 @@ export default function App() {
     <div className="app">
       {approvalBanner}
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <Header activeTab={tab} onTabChange={handleTabChange} onAbout={() => handleTabChange('about')} onSwitchEstate={handleSwitchEstate} showTabs={false} estateName={estateName} />
+      <Header activeTab={tab} onTabChange={handleTabChange} onAbout={() => handleTabChange('about')} onFeedback={handleOpenFeedback} onSwitchEstate={handleSwitchEstate} showTabs={false} estateName={estateName} />
       <main id="main-content">
         {tab === 'home' && (
           <HomePage
@@ -265,7 +272,7 @@ export default function App() {
           />
         )}
         {tab === 'suggest' && <SuggestPage estate={estate} onSubmitted={handleSuggestionSubmitted} />}
-        {tab === 'about' && <AboutPage onSwitchEstate={handleSwitchEstate} />}
+        {tab === 'about' && <AboutPage onSwitchEstate={handleSwitchEstate} focusFeedback={focusFeedback} onFeedbackFocused={() => setFocusFeedback(false)} />}
       </main>
       <BottomNav active={tab === 'about' ? 'home' : tab} onChange={handleTabChange} />
     </div>

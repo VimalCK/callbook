@@ -8,7 +8,7 @@ export async function shareProvider(provider: Provider): Promise<'shared' | 'cop
 
   if (navigator.share) {
     try {
-      await navigator.share({ title, text, url });
+      await navigator.share({ title, text: title, url });
       return 'shared';
     } catch {
       return 'error';

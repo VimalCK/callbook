@@ -187,3 +187,120 @@
 .about-switch-btn:hover {
   background: var(--color-primary-subtle);
 }
+
+.about-feedback-copy {
+  margin-bottom: var(--sp-3);
+}
+
+.about-feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.about-feedback-form .combobox-wrap {
+  position: relative;
+}
+
+.about-feedback-form .combobox-trigger {
+  width: 100%;
+}
+
+.about-feedback-form .combobox-arrow-btn {
+  color: var(--color-text-tertiary);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.about-feedback-form .combobox-arrow-btn.rotated {
+  transform: rotate(180deg);
+}
+
+.about-feedback-form .combobox-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #111b21;
+  box-shadow: inset 0 0 0 0.5px var(--color-divider), var(--shadow-lg);
+  border-radius: 2px;
+  z-index: var(--z-overlay);
+  max-height: 200px;
+  overflow-y: auto;
+  animation: dropIn var(--duration-fast) var(--ease-out);
+}
+
+.about-feedback-form .combobox-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  color: var(--color-text-primary);
+  font-size: var(--text-md);
+  text-align: left;
+  transition: background var(--duration-fast);
+}
+
+.about-feedback-form .combobox-option:hover,
+.about-feedback-form .combobox-option.active {
+  background: var(--color-bg);
+}
+
+.about-feedback-form .combobox-option.active {
+  color: var(--color-primary);
+}
+
+.about-feedback-form input:not(.form-control),
+.about-feedback-form textarea:not(.form-control) {
+  width: 100%;
+  padding: var(--sp-3);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  border: 0;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 0.5px var(--color-divider);
+  font-size: var(--text-md);
+  outline: none;
+}
+
+.about-feedback-form textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.about-feedback-form input:not(.form-control):focus,
+.about-feedback-form textarea:not(.form-control):focus {
+  box-shadow: inset 0 0 0 0.5px var(--color-primary), 0 0 0 2px var(--color-primary-subtle);
+}
+
+.about-feedback-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.about-feedback-submit:disabled {
+  opacity: 0.55;
+}
+
+.about-feedback-status {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm) !important;
+}
+
+.about-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px !important;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}

@@ -10,13 +10,14 @@ interface HeaderProps {
   onTabChange?: (tab: Tab) => void;
   onSearchToggle?: () => void;
   onAbout?: () => void;
+  onFeedback?: () => void;
   onSwitchEstate?: () => void;
   onLogout?: () => void;
   showTabs?: boolean;
   estateName?: string;
 }
 
-export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onAbout, onSwitchEstate, onLogout, showTabs = true, estateName }: HeaderProps) {
+export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onAbout, onFeedback, onSwitchEstate, onLogout, showTabs = true, estateName }: HeaderProps) {
   const isOnline = useOnlineStatus();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -32,7 +33,7 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onAbou
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
 
-  const hasMenuItems = onAbout || onSwitchEstate || onLogout;
+  const hasMenuItems = onAbout || onFeedback || onSwitchEstate || onLogout;
 
   return (
     <header className="header">
@@ -72,6 +73,11 @@ export function Header({ activeTab = 'home', onTabChange, onSearchToggle, onAbou
                   {onSwitchEstate && (
                     <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onSwitchEstate(); }}>
                       <span>Change Estate</span>
+                    </button>
+                  )}
+                  {onFeedback && (
+                    <button className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onFeedback(); }}>
+                      <span>Send Feedback</span>
                     </button>
                   )}
                   {onLogout && (
