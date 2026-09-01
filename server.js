@@ -74,10 +74,27 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS analytics_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,
+    event_key TEXT NOT NULL,
+    estate_id INTEGER REFERENCES estates(id) ON DELETE CASCADE,
+    provider_id INTEGER REFERENCES providers(id) ON DELETE CASCADE,
+    event_count INTEGER NOT NULL DEFAULT 1,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS applied_seeds (
     name TEXT PRIMARY KEY,
     applied_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+`);
+
+db.exec(`
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_analytics_event_bucket
+    ON analytics_events (event_type, estate_id, event_key);
 `);
 
 // Add estate_id columns if they don't exist (migration for existing DBs)
@@ -431,11 +448,11 @@ app.get('/api/providers', (req, res) => {
   if (estateSlug) {
     const estateId = getEstateId(estateSlug);
     if (!estateId) return res.json([]);
-    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.estate_id = ? AND providers.status IN (${visibleStatuses}) ORDER BY
+    rows = db.prepare(`SELECT providers.*, estates.slug AS estate_slug, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.estate_id = ? AND providers.status IN (${visibleStatuses}) ORDER BY
       CASE WHEN COALESCE(providers.business_name, providers.name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
       LOWER(COALESCE(providers.business_name, providers.name)) ASC`).all(estateId);
   } else {
-    rows = db.prepare(`SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.status IN (${visibleStatuses}) ORDER BY
+    rows = db.prepare(`SELECT providers.*, estates.slug AS estate_slug, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.status IN (${visibleStatuses}) ORDER BY
       CASE WHEN COALESCE(providers.business_name, providers.name) GLOB '[A-Za-z]*' THEN 0 ELSE 1 END,
       LOWER(COALESCE(providers.business_name, providers.name)) ASC`).all();
   }
@@ -443,7 +460,7 @@ app.get('/api/providers', (req, res) => {
 });
 
 app.get('/api/providers/:id', (req, res) => {
-  const row = db.prepare("SELECT providers.*, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ? AND providers.status = 'approved'").get(req.params.id);
+  const row = db.prepare("SELECT providers.*, estates.slug AS estate_slug, estates.name AS estate_name FROM providers LEFT JOIN estates ON estates.id = providers.estate_id WHERE providers.id = ? AND providers.status = 'approved'").get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found' });
   res.json({ ...row, is_verified: Boolean(row.is_verified), services: JSON.parse(row.services) });
 });
@@ -470,6 +487,53 @@ app.get('/api/providers/:id/feedback', (req, res) => {
     average_rating: summary.average_rating || 0,
     items,
   });
+});
+
+app.post('/api/analytics/estate-visit', (req, res) => {
+  const slug = cleanText(req.body.estate, 120);
+  const estateId = getEstateId(slug);
+  if (!estateId) return res.status(404).json({ error: 'Estate not found' });
+
+  db.prepare(`
+    INSERT INTO analytics_events (event_type, event_key, estate_id, event_count)
+    VALUES ('estate_visit', ?, ?, 1)
+    ON CONFLICT(event_type, estate_id, event_key)
+    DO UPDATE SET event_count = event_count + 1, updated_at = datetime('now')
+  `).run(slug, estateId);
+  res.status(201).json({ success: true });
+});
+
+app.post('/api/analytics/provider-open', (req, res) => {
+  const providerId = Number(req.body.provider_id);
+  if (!Number.isInteger(providerId) || providerId <= 0) return res.status(400).json({ error: 'Invalid provider id' });
+
+  const provider = db.prepare("SELECT id, estate_id FROM providers WHERE id = ? AND status = 'approved'").get(providerId);
+  if (!provider) return res.status(404).json({ error: 'Provider not found' });
+
+  db.prepare(`
+    INSERT INTO analytics_events (event_type, event_key, estate_id, provider_id, event_count)
+    VALUES ('provider_open', ?, ?, ?, 1)
+    ON CONFLICT(event_type, estate_id, event_key)
+    DO UPDATE SET event_count = event_count + 1, updated_at = datetime('now')
+  `).run(String(provider.id), provider.estate_id, provider.id);
+  res.status(201).json({ success: true });
+});
+
+app.post('/api/analytics/search', (req, res) => {
+  const term = cleanText(req.body.term, 80).replace(/\s+/g, ' ');
+  const slug = cleanText(req.body.estate, 120);
+  if (term.length < 2) return res.status(400).json({ error: 'Search term is too short' });
+
+  const estateId = getEstateId(slug);
+  if (!estateId) return res.status(404).json({ error: 'Estate not found' });
+
+  db.prepare(`
+    INSERT INTO analytics_events (event_type, event_key, estate_id, event_count)
+    VALUES ('search', ?, ?, 1)
+    ON CONFLICT(event_type, estate_id, event_key)
+    DO UPDATE SET event_count = event_count + 1, updated_at = datetime('now')
+  `).run(term.toLowerCase(), estateId);
+  res.status(201).json({ success: true });
 });
 
 app.post('/api/providers/:id/feedback', (req, res) => {
@@ -827,6 +891,86 @@ app.delete('/api/admin/feedback/:id', requireAdmin, (req, res) => {
   const result = db.prepare('DELETE FROM provider_feedback WHERE id = ?').run(req.params.id);
   if (result.changes === 0) return res.status(404).json({ error: 'Feedback not found' });
   res.json({ success: true });
+});
+
+app.get('/api/admin/analytics', requireAdmin, (req, res) => {
+  const overview = db.prepare(`
+    SELECT
+      SUM(CASE WHEN event_type = 'estate_visit' THEN event_count ELSE 0 END) AS estate_visits,
+      SUM(CASE WHEN event_type = 'provider_open' THEN event_count ELSE 0 END) AS provider_opens,
+      SUM(CASE WHEN event_type = 'search' THEN event_count ELSE 0 END) AS searches
+    FROM analytics_events
+  `).get();
+
+  const estateVisits = db.prepare(`
+    SELECT
+      estates.id,
+      estates.slug,
+      estates.name,
+      estates.description,
+      COALESCE(analytics_events.event_count, 0) AS visit_count,
+      analytics_events.updated_at AS last_visited_at
+    FROM estates
+    LEFT JOIN analytics_events
+      ON analytics_events.estate_id = estates.id
+      AND analytics_events.event_type = 'estate_visit'
+    ORDER BY visit_count DESC, LOWER(estates.name) ASC
+  `).all();
+
+  const topProviders = db.prepare(`
+    SELECT
+      providers.id,
+      providers.name,
+      providers.business_name,
+      providers.category,
+      providers.estate_id,
+      estates.name AS estate_name,
+      estates.description AS estate_description,
+      COALESCE(analytics_events.event_count, 0) AS open_count,
+      analytics_events.updated_at AS last_opened_at
+    FROM providers
+    LEFT JOIN estates ON estates.id = providers.estate_id
+    LEFT JOIN analytics_events
+      ON analytics_events.provider_id = providers.id
+      AND analytics_events.event_type = 'provider_open'
+    WHERE providers.status = 'approved'
+      AND analytics_events.id IS NOT NULL
+    ORDER BY open_count DESC, LOWER(COALESCE(providers.business_name, providers.name)) ASC
+    LIMIT 5
+  `).all();
+
+  const topSearches = db.prepare(`
+    SELECT
+      analytics_events.event_key AS search_term,
+      analytics_events.estate_id,
+      estates.name AS estate_name,
+      estates.description AS estate_description,
+      analytics_events.event_count AS search_count,
+      analytics_events.updated_at AS last_searched_at
+    FROM analytics_events
+    LEFT JOIN estates ON estates.id = analytics_events.estate_id
+    WHERE analytics_events.event_type = 'search'
+      AND analytics_events.event_key != ''
+    ORDER BY search_count DESC, analytics_events.event_key ASC
+    LIMIT 10
+  `).all();
+
+  res.json({
+    totals: {
+      estate_visits: overview.estate_visits || 0,
+      provider_opens: overview.provider_opens || 0,
+      searches: overview.searches || 0,
+    },
+    estate_visits: estateVisits,
+    top_providers: topProviders.map(row => ({
+      ...row,
+      estate_name: [row.estate_name, row.estate_description].filter(Boolean).join(', '),
+    })),
+    top_searches: topSearches.map(row => ({
+      ...row,
+      estate_name: [row.estate_name, row.estate_description].filter(Boolean).join(', '),
+    })),
+  });
 });
 
 app.delete('/api/admin/providers/:id', requireAdmin, (req, res) => {

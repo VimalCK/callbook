@@ -28,6 +28,7 @@ export function useProviders(estate: string | null): UseProvidersReturn {
       .then(([provData, catData]) => {
         const mapped: Provider[] = provData.map((p: Record<string, unknown>) => ({
           id: String(p.id),
+          estateSlug: (p.estate_slug as string) || undefined,
           name: p.name as string,
           businessName: (p.business_name as string) || undefined,
           category: p.category as string,

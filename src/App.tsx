@@ -27,6 +27,25 @@ interface SuggestionStatus {
 
 type Tab = 'home' | 'suggest' | 'about' | 'admin';
 
+const mapProvider = (p: Record<string, unknown>): Provider => ({
+  id: String(p.id),
+  estateSlug: (p.estate_slug as string) || undefined,
+  name: p.name as string,
+  businessName: (p.business_name as string) || undefined,
+  category: p.category as string,
+  description: p.description as string,
+  phone: p.phone as string,
+  whatsapp: (p.whatsapp as string) || undefined,
+  serviceArea: (p.service_area as string) || undefined,
+  address: (p.address as string) || undefined,
+  workingHours: (p.working_hours as string) || undefined,
+  image: (p.image as string) || undefined,
+  isVerified: Boolean(p.is_verified),
+  status: (p.status as string) || 'approved',
+  lastUpdated: (p.updated_at as string) || undefined,
+  services: (p.services as string[]) || [],
+});
+
 export default function App() {
   const [tab, setTab] = useState<Tab>('home');
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
@@ -90,11 +109,45 @@ export default function App() {
   }, [estate]);
 
   useEffect(() => {
+    if (!estate) return;
+
+    fetch('/api/analytics/estate-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estate }),
+    }).catch(() => {});
+  }, [estate]);
+
+  useEffect(() => {
     if (window.location.pathname === '/admin') {
       setTab('admin');
+      return;
     }
-    // Check if URL has an estate slug (e.g., /ballymakenny-park)
     const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+    const contactMatch = path.match(/^contact\/(\d+)$/);
+    if (contactMatch) {
+      fetch(`/api/providers/${contactMatch[1]}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) return;
+          const provider = mapProvider(data);
+          if (provider.estateSlug) {
+            setSelectedEstate(provider.estateSlug);
+            setEstate(provider.estateSlug);
+          }
+          addRecentlyViewed(provider.id);
+          fetch('/api/analytics/provider-open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider_id: Number(provider.id) }),
+          }).catch(() => {});
+          setSelectedProvider(provider);
+        })
+        .catch(() => {});
+      return;
+    }
+
+    // Check if URL has an estate slug (e.g., /ballymakenny-park)
     if (path && path !== 'admin' && !path.startsWith('api')) {
       // Validate it's a real estate by fetching
       fetch(`/api/estates/${path}`)
@@ -130,6 +183,11 @@ export default function App() {
 
   const handleViewProvider = useCallback((provider: Provider) => {
     addRecentlyViewed(provider.id);
+    fetch('/api/analytics/provider-open', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider_id: Number(provider.id) }),
+    }).catch(() => {});
     setSelectedProvider(provider);
   }, []);
 
@@ -203,6 +261,7 @@ export default function App() {
             error={error}
             onRefetch={refetch}
             onViewProvider={handleViewProvider}
+            estate={estate}
           />
         )}
         {tab === 'suggest' && <SuggestPage estate={estate} onSubmitted={handleSuggestionSubmitted} />}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { SearchBar } from '../components/SearchBar';
 import { CategoryGrid } from '../components/CategoryGrid';
@@ -16,11 +16,13 @@ interface HomePageProps {
   error: string | null;
   onRefetch: () => void;
   onViewProvider: (provider: Provider) => void;
+  estate: string;
 }
 
-export function HomePage({ providers, categories, isLoading, error, onRefetch, onViewProvider }: HomePageProps) {
+export function HomePage({ providers, categories, isLoading, error, onRefetch, onViewProvider, estate }: HomePageProps) {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const lastTrackedSearch = useRef('');
 
   const recentSearches = getRecentSearches();
 
@@ -40,6 +42,23 @@ export function HomePage({ providers, categories, isLoading, error, onRefetch, o
   const handleSearch = () => {
     if (query.trim()) addRecentSearch(query.trim());
   };
+
+  useEffect(() => {
+    const term = query.trim().replace(/\s+/g, ' ');
+    if (term.length < 2 || term === lastTrackedSearch.current) return;
+
+    const timeoutId = window.setTimeout(() => {
+      lastTrackedSearch.current = term;
+      addRecentSearch(term);
+      fetch('/api/analytics/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estate, term }),
+      }).catch(() => {});
+    }, 900);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [estate, query]);
 
   const handleQueryChange = (value: string) => {
     setQuery(value);

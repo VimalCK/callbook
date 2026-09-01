@@ -1,5 +1,6 @@
 export interface Provider {
   id: string;
+  estateSlug?: string;
   name: string;
   businessName?: string;
   category: string;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home, Tag, Star } from 'lucide-react';
+import { Pencil, Trash2, Check, X, Lock, Users, Inbox, Phone, MapPin, BadgeCheck, ChevronDown, Clock, MessageSquare, Home, Tag, Star, BarChart3, Eye, Search } from 'lucide-react';
 import { Header } from '../components/Header';
 import { SearchBar } from '../components/SearchBar';
 import { getInitials } from '../utils/initials';
@@ -54,6 +54,56 @@ interface CategoryRow {
   sort_order: number;
   provider_count?: number;
 }
+
+interface EstateAnalyticsRow {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  visit_count: number;
+  last_visited_at: string | null;
+}
+
+interface ProviderAnalyticsRow {
+  id: number;
+  name: string;
+  business_name: string | null;
+  category: string;
+  estate_id: number;
+  estate_name: string;
+  open_count: number;
+  last_opened_at: string | null;
+}
+
+interface SearchAnalyticsRow {
+  search_term: string;
+  estate_id: number;
+  estate_name: string;
+  search_count: number;
+  last_searched_at: string | null;
+}
+
+interface AnalyticsData {
+  totals: {
+    estate_visits: number;
+    provider_opens: number;
+    searches: number;
+  };
+  estate_visits: EstateAnalyticsRow[];
+  top_providers: ProviderAnalyticsRow[];
+  top_searches: SearchAnalyticsRow[];
+}
+
+const EMPTY_ANALYTICS: AnalyticsData = {
+  totals: {
+    estate_visits: 0,
+    provider_opens: 0,
+    searches: 0,
+  },
+  estate_visits: [],
+  top_providers: [],
+  top_searches: [],
+};
 
 const EMPTY_FORM = {
   name: '',
@@ -262,6 +312,7 @@ export function AdminPage() {
   const [suggestions, setSuggestions] = useState<SuggestionRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [estates, setEstates] = useState<{ id: number; slug: string; name: string; description: string }[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData>(EMPTY_ANALYTICS);
   const [estateFilter, setEstateFilter] = useState<string>('');
   const [providerSearch, setProviderSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -269,7 +320,7 @@ export function AdminPage() {
   const [providerFeedback, setProviderFeedback] = useState<FeedbackRow[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [message, setMessage] = useState('');
-  const [tab, setTab] = useState<'providers' | 'suggestions' | 'categories'>('providers');
+  const [tab, setTab] = useState<'providers' | 'suggestions' | 'categories' | 'analytics'>('providers');
   const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(null);
   const [editingSuggestion, setEditingSuggestion] = useState<number | null>(null);
   const [suggestionForm, setSuggestionForm] = useState(EMPTY_FORM);
@@ -280,7 +331,7 @@ export function AdminPage() {
   const [editCatDesc, setEditCatDesc] = useState('');
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
-  const switchTab = (t: 'providers' | 'suggestions' | 'categories') => {
+  const switchTab = (t: 'providers' | 'suggestions' | 'categories' | 'analytics') => {
     setTab(t);
     setShowForm(false);
     setEditingId(null);
@@ -323,16 +374,18 @@ export function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [pRes, sRes, eRes, cRes] = await Promise.all([
+      const [pRes, sRes, eRes, cRes, aRes] = await Promise.all([
         fetch('/api/providers', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/suggestions', { headers: { 'x-admin-token': token || '' } }),
         fetch('/api/estates'),
         fetch('/api/categories'),
+        fetch('/api/admin/analytics', { headers: { 'x-admin-token': token || '' } }),
       ]);
-      if ([pRes, sRes, eRes, cRes].some(handleUnauthorized)) return;
+      if ([pRes, sRes, eRes, cRes, aRes].some(handleUnauthorized)) return;
       if (pRes.ok) setProviders(await pRes.json());
       if (sRes.ok) setSuggestions(await sRes.json());
       if (eRes.ok) setEstates(await eRes.json());
+      if (aRes.ok) setAnalytics(await aRes.json());
       if (cRes.ok) {
         const cats = await cRes.json();
         setCategories(cats.sort((a: CategoryRow, b: CategoryRow) => a.name.localeCompare(b.name)));
@@ -592,6 +645,7 @@ export function AdminPage() {
   };
 
   const pendingSuggestions = suggestions.filter(s => s.status === 'pending' || hasSuggestedEdits(s));
+  const mostOpenedProvider = analytics.top_providers[0];
 
   const selectedEstateProviders = estateFilter
     ? providers.filter(p => p.estate_id === Number(estateFilter))
@@ -674,6 +728,10 @@ export function AdminPage() {
           <Tag size={20} strokeWidth={tab === 'categories' ? 2.2 : 1.8} />
           <span>Categories</span>
           <span className="admin-tab-badge">{categories.length}</span>
+        </button>
+        <button className={`admin-tab ${tab === 'analytics' ? 'active' : ''}`} onClick={() => switchTab('analytics')}>
+          <BarChart3 size={20} strokeWidth={tab === 'analytics' ? 2.2 : 1.8} />
+          <span>Analytics</span>
         </button>
       </div>
 
@@ -1074,6 +1132,117 @@ export function AdminPage() {
                 <span>Add a category to get started</span>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== ANALYTICS TAB ===== */}
+      {tab === 'analytics' && (
+        <div className="admin-section admin-analytics-section">
+          <div className="admin-analytics-scroll">
+            <div className="admin-analytics-summary">
+              <div className="admin-analytics-card">
+                <Home size={18} />
+                <div>
+                  <span className="analytics-value">{analytics.totals.estate_visits}</span>
+                  <span className="analytics-label">Total estate visits</span>
+                </div>
+              </div>
+              <div className="admin-analytics-card">
+                <Eye size={18} />
+                <div>
+                  <span className="analytics-value">{analytics.totals.provider_opens}</span>
+                  <span className="analytics-label">Contact opens</span>
+                </div>
+              </div>
+              <div className="admin-analytics-card">
+                <Search size={18} />
+                <div>
+                  <span className="analytics-value">{analytics.totals.searches}</span>
+                  <span className="analytics-label">Searches</span>
+                </div>
+              </div>
+            </div>
+
+            <section className="admin-analytics-block">
+              <div className="admin-analytics-heading">
+                <h2>Visits By Estate</h2>
+                <span>{analytics.estate_visits.length} estates</span>
+              </div>
+              <div className="admin-analytics-list">
+                {analytics.estate_visits.map(estate => (
+                  <div key={estate.id} className="admin-analytics-row">
+                    <div className="admin-row-avatar analytics"><Home size={16} /></div>
+                    <div className="admin-row-content">
+                      <div className="admin-row-title">{[estate.name, estate.description].filter(Boolean).join(', ')}</div>
+                      <div className="admin-row-meta">
+                        <span>{estate.last_visited_at ? `Last visit ${new Date(estate.last_visited_at).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : 'No visits yet'}</span>
+                      </div>
+                    </div>
+                    <strong className="admin-analytics-count">{estate.visit_count}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="admin-analytics-block">
+              <div className="admin-analytics-heading">
+                <h2>Most Opened Contacts</h2>
+                {mostOpenedProvider && <span>Top: {mostOpenedProvider.business_name || mostOpenedProvider.name}</span>}
+              </div>
+              <div className="admin-analytics-list">
+                {analytics.top_providers.map(provider => (
+                  <div key={provider.id} className="admin-analytics-row">
+                    <div className="admin-row-avatar analytics">{getInitials(provider.business_name || provider.name)}</div>
+                    <div className="admin-row-content">
+                      <div className="admin-row-title">{provider.business_name || provider.name}</div>
+                      <div className="admin-row-meta">
+                        <span>{categories.find(c => c.id === provider.category)?.name || provider.category}</span>
+                        <span>{provider.estate_name}</span>
+                        <span>{provider.last_opened_at ? `Last opened ${new Date(provider.last_opened_at).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : 'Not opened yet'}</span>
+                      </div>
+                    </div>
+                    <strong className="admin-analytics-count">{provider.open_count}</strong>
+                  </div>
+                ))}
+                {analytics.top_providers.length === 0 && (
+                  <div className="admin-empty">
+                    <BarChart3 size={24} />
+                    <p>No contact opens yet</p>
+                    <span>Counts will appear after people open contact details</span>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="admin-analytics-block">
+              <div className="admin-analytics-heading">
+                <h2>Top Search Keywords</h2>
+                <span>Top 10</span>
+              </div>
+              <div className="admin-analytics-list">
+                {analytics.top_searches.map(item => (
+                  <div key={`${item.estate_id}-${item.search_term}`} className="admin-analytics-row">
+                    <div className="admin-row-avatar analytics"><Search size={16} /></div>
+                    <div className="admin-row-content">
+                      <div className="admin-row-title">{item.search_term}</div>
+                      <div className="admin-row-meta">
+                        <span>{item.estate_name}</span>
+                        <span>{item.last_searched_at ? `Last searched ${new Date(item.last_searched_at).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : 'Not searched yet'}</span>
+                      </div>
+                    </div>
+                    <strong className="admin-analytics-count">{item.search_count}</strong>
+                  </div>
+                ))}
+                {analytics.top_searches.length === 0 && (
+                  <div className="admin-empty">
+                    <Search size={24} />
+                    <p>No searches yet</p>
+                    <span>Keywords will appear after people use search</span>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         </div>
       )}
